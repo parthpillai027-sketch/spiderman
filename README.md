@@ -4,6 +4,12 @@ A browser-based open-world Spider-Man prototype with **voxel (Minecraft-style) g
 
 Everything is built in code: the city, the pixel-art textures, the character skins, the music and the sound effects. There are no external art or audio assets, and the only dependency is three.js (MIT, vendored in `vendor/`).
 
+## Play online
+
+**https://parthpillai027-sketch.github.io/spiderman/** (GitHub Pages, served straight from this repo: no build step, any modern desktop browser).
+
+To (re)enable hosting: repo **Settings → Pages → Build and deployment → Source: Deploy from a branch**, branch `claude/eager-einstein-ctfvii`, folder `/ (root)`, then **Save**. The `.nojekyll` file makes GitHub serve the files as-is.
+
 ## Running it
 
 Any static file server works. Serve the repo root and open `index.html`:
