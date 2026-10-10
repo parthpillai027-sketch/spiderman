@@ -225,6 +225,7 @@ await run(0.3);
 await page.waitForTimeout(450);
 await page.keyboard.press('Enter');
 await run(0.5);
+await run(0.3); // story card closes, then the chapter spawns the Goblin holding MJ
 await page.evaluate(() => {
   const g = window.__game;
   g.player.pos.copy(g.goblin.pos).add({ x: 6, y: -8, z: 10 });

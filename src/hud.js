@@ -309,6 +309,7 @@ export class HUD {
   }
 
   say(name, text, dur = 4) {
+    if (name && name !== 'TIP') this.game.voices.speak(name, text);
     this.el.subName.textContent = name ? `${name}:` : '';
     this.el.subText.textContent = text;
     this.el.sub.classList.add('show');
@@ -365,6 +366,7 @@ export class HUD {
     }
     this.el.story.classList.remove('hidden');
     this.storyOpenedAt = performance.now();
+    this.game.voices.speak('narrator', `${title}. ${paragraphs.join(' ')}`);
     return new Promise((res) => {
       this.storyResolve = res;
     });
@@ -378,6 +380,7 @@ export class HUD {
     if (!this.storyResolve) return;
     if (performance.now() - this.storyOpenedAt < 400) return;
     this.el.story.classList.add('hidden');
+    this.game.voices.stop();
     const r = this.storyResolve;
     this.storyResolve = null;
     this.game.audio.play('ui');

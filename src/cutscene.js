@@ -1,5 +1,6 @@
 // In-engine cutscenes: blocky actors on location, framed camera shots,
-// letterboxing and a dialogue box with pixel portraits and typewriter text.
+// letterboxing and a dialogue box with pixel portraits, typewriter text and
+// synthesized character voices (auto-advancing when a line has been spoken).
 //
 // A scene is { setup(api), shots: [{ cam, look, drift?, lines: [[who, text], ...] }] }
 // where `who` names an actor registered in setup (or null for narration).
@@ -120,7 +121,13 @@ export class Cutscenes {
     this.el.text.textContent = '';
     this.el.next.classList.remove('show');
     this.drawPortrait(c);
-    if (c) this.game.audio.play('ui');
+    s.autoAt = null;
+    const lineId = (s.lineId = (s.lineId || 0) + 1);
+    const voiced = this.game.voices.speak(c ? c.skin : 'narrator', text, () => {
+      // spoken in full: finish typing and move on shortly after
+      if (this.active === s && s.lineId === lineId) s.autoAt = s.t + 0.7;
+    });
+    if (!voiced && c) this.game.audio.play('ui');
   }
 
   drawPortrait(c) {
@@ -159,6 +166,11 @@ export class Cutscenes {
     const shot = s.def.shots[s.shot];
     if (!shot) return;
 
+    if (s.autoAt !== null && s.autoAt !== undefined && s.t >= s.autoAt) {
+      s.autoAt = null;
+      this.nextLine();
+      if (!this.active) return;
+    }
     if (s.typed < s.lineText.length) {
       s.typed = Math.min(s.lineText.length, s.typed + dt * CHARS_PER_SEC);
       this.el.text.textContent = s.lineText.slice(0, Math.floor(s.typed));
@@ -184,6 +196,7 @@ export class Cutscenes {
     const s = this.active;
     const g = this.game;
     this.active = null;
+    g.voices.stop();
     for (const a of s.spawned) a.remove();
     for (const o of s.props) g.scene.remove(o);
     g.player.rig.root.visible = s.prevVisible;
