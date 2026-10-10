@@ -2,7 +2,7 @@
 // letterboxing and a dialogue box with pixel portraits, typewriter text and
 // synthesized character voices (auto-advancing when a line has been spoken).
 //
-// A scene is { setup(api), shots: [{ cam, look, drift?, lines: [[who, text], ...] }] }
+// A scene is { setup(api), tick?(dt), shots: [{ cam, look, drift?, lines: [[who, text], ...] }] }
 // where `who` names an actor registered in setup (or null for narration).
 import * as THREE from '../vendor/three.module.min.js';
 import { Actor } from './npcs.js';
@@ -99,6 +99,8 @@ export class Cutscenes {
     }
     s.shotT = 0;
     s.line = -1;
+    // safety net: never start a shot with the lens inside a building
+    for (let k = 0; k < 40 && this.game.world.pointInside(shot.cam, 0.3); k++) shot.cam.y += 1;
     this.nextLine();
   }
 
@@ -186,6 +188,7 @@ export class Cutscenes {
       cam.updateProjectionMatrix();
     }
 
+    if (s.def.tick) s.def.tick(dt);
     for (const [key, c] of Object.entries(s.cast)) {
       const pose = key === s.speaker ? 'talk' : c.pose === 'idle' ? 'listen' : c.pose;
       animateRig(c.rig, pose, s.t * 3 + key.length, dt, 8);

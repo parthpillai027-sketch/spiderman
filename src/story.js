@@ -23,12 +23,33 @@ function policeCar() {
   return g;
 }
 
+// Find a spot near `base` on the same surface where two people standing
+// side by side (and the air around them) are clear of rooftop props.
+function clearSpot(world, base, radius = 9) {
+  const ok = (c) => {
+    for (const dx of [-2.2, -1.3, 0, 1.3, 2.2]) {
+      for (const dz of [-1.2, 0, 1.2]) {
+        for (const dy of [0.5, 1.8, 3.2, 5]) if (world.pointInside(V(c.x + dx, c.y + dy, c.z + dz))) return false;
+        if (Math.abs(world.groundHeight(c.x + dx, c.z + dz, c.y + 1) - c.y) > 0.2) return false;
+      }
+    }
+    return true;
+  };
+  for (let r = 0; r <= radius; r += 1.5) {
+    for (let a = 0; a < 8; a++) {
+      const c = base.clone().add(V(Math.cos((a * Math.PI) / 4) * r, 0, Math.sin((a * Math.PI) / 4) * r));
+      if (ok(c)) return c;
+    }
+  }
+  return base.clone();
+}
+
 // Each entry: (game, ctx) => scene definition for Cutscenes.play().
 export const SCENES = {
   ch1(g) {
-    const R = g.world.landmarks.start;
-    const peter = R.clone().add(V(-1.3, 0, 0.5));
-    const ben = R.clone().add(V(1.3, 0, 0.5));
+    const R = clearSpot(g.world, g.world.landmarks.start);
+    const peter = R.clone().add(V(-1.3, 0, 0));
+    const ben = R.clone().add(V(1.3, 0, 0));
     return {
       setup(api) {
         api.hidePlayer();
@@ -108,9 +129,10 @@ export const SCENES = {
   },
 
   ch3(g) {
-    const R = g.world.roofPoint(g.world.landmarks.bugle);
-    const jj = R.clone().add(V(-1.4, 0, 3));
-    const peter = R.clone().add(V(1.4, 0, 3));
+    const roof = g.world.roofPoint(g.world.landmarks.bugle);
+    const R = clearSpot(g.world, roof.clone().add(V(0, 0, 5)), 4);
+    const jj = R.clone().add(V(-1.4, 0, 0));
+    const peter = R.clone().add(V(1.4, 0, 0));
     return {
       setup(api) {
         api.hidePlayer();
@@ -119,7 +141,7 @@ export const SCENES = {
       },
       shots: [
         {
-          cam: R.clone().add(V(0, 4, 13)), look: R.clone().add(V(0, 3.5, 0)), drift: [0, -0.25, -0.3],
+          cam: R.clone().add(V(6, 2.6, 7)), look: R.clone().add(V(-0.8, 1.9, -3)), drift: [-0.3, 0.05, 0],
           lines: [[null, 'The roof of the Daily Bugle. Its editor-in-chief takes his cigar breaks up here.']],
         },
         {
@@ -160,7 +182,7 @@ export const SCENES = {
       },
       shots: [
         {
-          cam: P.clone().add(V(0, 9, 26)), look: P.clone().add(V(0, 6, 0)), drift: [0, -0.5, -0.8],
+          cam: P.clone().add(V(9, 6, 12)), look: P.clone().add(V(-2, 5, -10)), drift: [-0.4, -0.15, 0],
           lines: [[null, 'The Unity Festival. Balloons, a brass band, and the new owners of Oscorp on stage.']],
         },
         {
@@ -191,7 +213,17 @@ export const SCENES = {
     const chief = S.clone().add(V(1.3, 0, 0));
     const spidey = S.clone().add(V(-1.3, 0, 0));
     const fireLook = V((b.x0 + b.x1) / 2, b.top * 0.6, b.z1);
+    const lerp = (a, c, t) => a + (c - a) * t;
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
     return {
+      tick() {
+        for (let k = 0; k < 6; k++) {
+          const f = V(lerp(b.x0 + 1, b.x1 - 1, Math.random()), lerp(SIDEWALK_H + 4, b.top - 1, Math.random()), b.z1 + 0.3);
+          g.particles.spawn(f, V((Math.random() - 0.5) * 1.2, 2 + Math.random() * 2, 0.6), pick([0xff5a1a, 0xff9a1a, 0xffd84a]), 0.5 + Math.random() * 0.5, 0.8, 2, 0.5);
+        }
+        const r = V(lerp(b.x0 + 3, b.x1 - 3, Math.random()), b.top + 1, lerp(b.z0 + 3, b.z1 - 3, Math.random()));
+        g.particles.spawn(r, V((Math.random() - 0.5) * 2, 5, (Math.random() - 0.5) * 2), pick([0x333333, 0x4a4a4a, 0x222222]), 1.2 + Math.random(), 2.4, 1.5, 0.3);
+      },
       setup(api) {
         api.actor('chief', 'Fire Chief', 'chief', chief, yawTo(chief, spidey));
         api.spidey(spidey, yawTo(spidey, chief));

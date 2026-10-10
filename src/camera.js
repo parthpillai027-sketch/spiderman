@@ -31,6 +31,7 @@ export class CameraRig {
 
   update(dt, realDt) {
     const g = this.game;
+    if (g.cutscenes && g.cutscenes.playing) return; // the cutscene owns the camera
     const p = g.player;
     const look = g.input.look(realDt);
     this.yaw -= look.dx;
