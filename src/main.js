@@ -426,9 +426,24 @@ class Game {
     for (let t = 0; t < seconds; t += dt) {
       this.input.poll();
       if (this.state === 'playing') this.update(dt, dt);
+      else if (this.state === 'title') {
+        this.time += dt;
+        this.titleTick(dt);
+      }
       else if (this.state === 'story' && this.input.pressed('confirm')) this.hud.closeStory();
       this.input.endFrame();
     }
+  }
+
+  // slow orbit over the skyline behind the title menu
+  titleTick(dt) {
+    const a = this.time * 0.04;
+    this.camera.position.set(Math.cos(a) * 280 + 60, 150, Math.sin(a) * 280);
+    this.camera.lookAt(40, 40, 0);
+    this.traffic.update(dt);
+    this.peds.update(dt);
+    this.world.update(dt);
+    this.updateSky(dt);
   }
 
   // ---- main loop -----------------------------------------------------------------
@@ -469,13 +484,7 @@ class Game {
     } else if (this.state === 'paused') {
       if (this.input.pressed('pause') && this.input.usingPad) this.resume();
     } else if (this.state === 'title') {
-      const a = this.time * 0.04;
-      this.camera.position.set(Math.cos(a) * 280 + 60, 150, Math.sin(a) * 280);
-      this.camera.lookAt(40, 40, 0);
-      this.traffic.update(raw);
-      this.peds.update(raw);
-      this.world.update(raw);
-      this.updateSky(raw);
+      this.titleTick(raw);
       if (this.input.usingPad && this.input.pressed('confirm')) this.startGame(!this.save.started);
     }
     this.renderer.render(this.scene, this.camera);
