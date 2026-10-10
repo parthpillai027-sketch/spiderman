@@ -42,17 +42,6 @@
     <div id="hint">M map &middot; ESC pause</div>
   </div>
 
-  <div id="cutscene" class="hidden">
-    <div class="bar top"></div>
-    <div class="bar bottom"></div>
-    <button id="dlg-skip">Skip scene &#9656;&#9656;</button>
-    <div id="dlg">
-      <canvas id="dlg-face" width="64" height="64"></canvas>
-      <div class="dlg-body"><b id="dlg-name"></b><p id="dlg-text"></p></div>
-      <span id="dlg-next">&#9660;</span>
-    </div>
-  </div>
-
   <div id="bigmap" class="hidden"><div class="card"><h2>MANHATTAN</h2><canvas id="bigmap-canvas"></canvas><p>Press M to close</p></div></div>
 
   <div id="story" class="hidden">
@@ -72,16 +61,10 @@
     </div>
     <div class="menu-row">
       <nav>
-        <button id="btn-continue" class="hidden">Continue Story<small id="continue-ch"></small></button>
-        <button id="btn-new">Story Mode</button>
-        <button id="btn-free" class="alt">Free Roam</button>
-        <button id="btn-voices" class="alt" aria-pressed="true">Voices: On</button>
-        <button id="btn-controls" class="alt">Controls</button>
-        <button id="btn-credits" class="alt">Credits</button>
-        <div class="chapters-box">
-          <h3>Story: Spider-Man (2002)</h3>
-          <ol id="story-progress"></ol>
-        </div>
+        <button id="btn-continue" class="hidden">Continue</button>
+        <button id="btn-new">New Game</button>
+        <button id="btn-controls">Controls</button>
+        <button id="btn-credits">Credits</button>
       </nav>
       <section class="keys" aria-labelledby="keys-title">
         <h3 id="keys-title">Controls</h3>
@@ -121,7 +104,6 @@
       <div class="row">
         <button id="btn-resume">Resume</button>
         <button id="btn-music">Music: On</button>
-        <button id="btn-voices-pause">Voices: On</button>
         <button id="btn-pause-controls">Controls</button>
         <button id="btn-quit">Quit to title</button>
       </div>

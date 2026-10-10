@@ -191,10 +191,6 @@ export function poseTargets(name, t, p = {}) {
       return limbs([-2.0, 0, 0.6], [-2.0, 0, -0.6], [-1.5, 0, 0], [-1.5, 0, 0]);
     case 'heal':
       return limbs([-1.0, 0, -0.6], [-1.0, 0, 0.6], Z, Z, [0.3, 0, 0]);
-    case 'talk':
-      return limbs([-0.25 + Math.sin(t * 0.9) * 0.15, 0, 0.15], [-0.7 + Math.sin(t * 1.3) * 0.35, 0.2, -0.25], Z, Z, [Math.sin(t * 1.7) * 0.07, Math.sin(t * 0.6) * 0.12, 0]);
-    case 'listen':
-      return limbs([0.05, 0, 0.12], [0.05, 0, -0.12], Z, Z, [0.05 + Math.sin(t * 0.5) * 0.04, 0, 0]);
     case 'celebrate':
       return limbs([-3.0, 0, 0.3], [-3.0, 0, -0.3], Z, Z, [-0.3, 0, 0]);
     default:

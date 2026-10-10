@@ -4,7 +4,6 @@ import * as THREE from '../vendor/three.module.min.js';
 import { Actor } from './npcs.js';
 import { WATER_Y, SIDEWALK_H, X0, Z0, CELL } from './world.js';
 import { tex } from './textures.js';
-import { SCENES } from './story.js';
 import { rand, pick, lerp, clamp } from './util.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -114,21 +113,6 @@ function story(title, paragraphs) {
       ctx.game.showStory(title, paragraphs).then(() => { ctx.storyDone = true; });
     },
     update: (ctx) => ctx.storyDone,
-  };
-}
-
-// In-engine cutscene from story.js (skipped when retrying a failed mission).
-function scene(key) {
-  return {
-    enter(ctx) {
-      ctx.sceneDone = false;
-      if (ctx.retry) {
-        ctx.sceneDone = true;
-        return;
-      }
-      ctx.game.playCutscene(SCENES[key](ctx.game, ctx)).then(() => { ctx.sceneDone = true; });
-    },
-    update: (ctx) => ctx.sceneDone,
   };
 }
 
@@ -255,7 +239,6 @@ export const MISSIONS = [
         'Then, on a class trip to a genetics lab, a genetically engineered spider bit him. Now he can stick to walls, feel danger before it happens - and the web-shooters he built in his bedroom actually work.',
         'Time to find out what he can really do.',
       ]),
-      scene('ch1'),
       {
         text: 'Swing through the rings',
         enter(ctx) {
@@ -356,7 +339,6 @@ export const MISSIONS = [
   {
     id: 'carjacker',
     title: 'The Carjacker',
-    time: 'dusk',
     start: (w) => w.intersection(3, 4),
     reward: 'homemade',
     steps: [
@@ -365,7 +347,6 @@ export const MISSIONS = [
         'Tonight a carjacker shot Uncle Ben on a street corner in Queens. Uncle Ben didn\'t make it.',
         'The police say the killer is fleeing toward the warehouses by the river. Peter isn\'t waiting for the police.',
       ]),
-      scene('ch2'),
       {
         text: 'Chase the getaway car - hit it with webs to slow it down',
         enter(ctx) {
@@ -460,7 +441,6 @@ export const MISSIONS = [
         'A few months later, Spider-Man is the talk of the city. The Daily Bugle calls him a menace on the front page - and pays Peter for the photos on page two.',
         'Tonight the police scanner won\'t stop crackling. Three crimes in progress across Manhattan.',
       ]),
-      scene('ch3'),
       {
         text: 'Stop the crimes in progress',
         enter(ctx) {
@@ -507,7 +487,6 @@ export const MISSIONS = [
         'Mary Jane Watson - the girl next door Peter has loved since he was six - is somewhere in the crowd.',
         'Then a figure on a bat-winged glider comes screaming out of the sky, laughing like a madman.',
       ]),
-      scene('ch4'),
       {
         text: 'Defuse the pumpkin bombs before they go off',
         enter(ctx) {
@@ -569,7 +548,6 @@ export const MISSIONS = [
         'The Goblin wants Spider-Man\'s attention, and he knows exactly how to get it.',
         'An apartment building is burning. People are trapped on the balconies and the roof, and the fire ladders can\'t reach high enough.',
       ]),
-      scene('ch5'),
       {
         text: 'Rescue the trapped civilians',
         enter(ctx) {
@@ -684,7 +662,6 @@ export const MISSIONS = [
         update: (ctx) => ctx.player.pos.distanceTo(ctx.game.goblin.pos) < 38,
         exit(ctx) { ctx.removeMarker(ctx.data.goalMarker); },
       },
-      scene('ch6'),
       {
         text: 'Catch Mary Jane!',
         enter(ctx) {
@@ -791,12 +768,9 @@ export const MISSIONS = [
       story('The End Of The Goblin', [
         'The Goblin lies beside his wrecked glider. Behind the mask is Norman Osborn - the father of Peter\'s best friend, Harry.',
         'Spider-Man carries Norman home so Harry never has to learn the truth. Not yet.',
-      ]),
-      scene('ending'),
-      story('The End', [
-        'Thanks for playing Spider-Man: Block City!',
-        'Free roam is open: stop street crimes, hunt down the hidden backpacks, and replay any chapter from the pause menu.',
-        'Battle-Damaged Suit unlocked.',
+        'At the cemetery, Mary Jane tells Peter she loves him. He tells her he can only be her friend. Some secrets you carry alone.',
+        'It\'s a gift and a burden, and he has chosen to carry both. The city has its hero.',
+        'THANKS FOR PLAYING! Free roam is open. Battle-Damaged Suit unlocked.',
       ]),
     ],
   },
@@ -876,12 +850,7 @@ export class MissionManager {
   freeRoam(dt) {
     const i = this.index;
     const hud = this.game.hud;
-    if (this.game.mode === 'free') {
-      if (!this.freeRoamShown) {
-        this.freeRoamShown = true;
-        hud.objective('Free Roam', 'Stop crimes and find the hidden backpacks');
-      }
-    } else if (i < MISSIONS.length) {
+    if (i < MISSIONS.length) {
       const def = MISSIONS[i];
       if (!this.startMarker) {
         this.startPos = def.start(this.game.world);
@@ -967,7 +936,7 @@ class Crimes {
   }
   update(dt) {
     const g = this.game;
-    if (g.save.missionIndex < 2 && g.mode !== 'free') return;
+    if (g.save.missionIndex < 2) return;
     const p = g.player.pos;
     if (!this.crime) {
       this.cooldown -= dt;

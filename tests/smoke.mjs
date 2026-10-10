@@ -81,26 +81,10 @@ await page.evaluate(() => { window.__game.manualStep = true; });
 await run(0.2);
 check((await state()).state === 'story', 'new game opens the chapter 1 story card');
 await shot('02-story');
-await page.waitForTimeout(500);
 await page.keyboard.press('Enter');
-await run(0.3);
-await run(0.1);
-check((await state()).state === 'cutscene', 'story card is followed by the chapter 1 cutscene');
-await run(1.5);
-const line1 = await page.evaluate(() => document.getElementById('dlg-text').textContent);
-await shot('02b-cutscene');
-await page.waitForTimeout(400);
-await page.keyboard.press('Enter');
-await run(0.2);
-await page.keyboard.press('Enter');
-await run(1.5);
-const line2 = await page.evaluate(() => document.getElementById('dlg-text').textContent);
-check(line1.length > 10 && line2 !== line1, 'cutscene dialogue types out and advances');
-await shot('02c-cutscene');
-await page.keyboard.press('Escape');
 await run(0.3);
 let s = await log('after intro');
-check(s.state === 'playing' && s.mission === 'great-power', 'skipping the cutscene returns to chapter 1 gameplay');
+check(s.state === 'playing' && s.mission === 'great-power', 'mission 1 is running after the story');
 await shot('03-rooftop');
 
 // ---- traversal ---------------------------------------------------------------
@@ -198,57 +182,12 @@ s = await log('after brawl');
 check(s.alive < before, `attacking knocks enemies out (${before} -> ${s.alive})`);
 check(s.hp > 0 || s.state === 'playing', 'player survives or respawns');
 
-// ---- every story cutscene plays and can be skipped -------------------------------
-for (const key of ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ending']) {
-  await page.evaluate(async (k) => {
-    const { SCENES } = await import('/src/story.js');
-    const g = window.__game;
-    g.missions.abort();
-    g.enemies.clear();
-    g.playCutscene(SCENES[k](g, { data: {} }));
-  }, key);
-  await run(1.5);
-  const sc = await page.evaluate(() => ({ state: window.__game.state, text: document.getElementById('dlg-text').textContent }));
-  await shot(`30-scene-${key}`);
-  await page.keyboard.press('Escape');
-  await run(0.2);
-  check(sc.state === 'cutscene' && sc.text.length > 5 && (await state()).state === 'playing', `cutscene "${key}" plays and skips`);
-}
-// chapter 6's scene is triggered mid-mission, once you reach the Goblin
-await page.evaluate(async () => {
-  const { MISSIONS } = await import('/src/missions.js');
-  const g = window.__game;
-  g.player.spawn(MISSIONS[5].start(g.world).clone().add({ x: 0, y: 1, z: 0 }));
-  g.missions.start(5);
-});
-await run(0.3);
-await page.waitForTimeout(450);
-await page.keyboard.press('Enter');
-await run(0.5);
-await run(0.3); // story card closes, then the chapter spawns the Goblin holding MJ
-await page.evaluate(() => {
-  const g = window.__game;
-  g.player.pos.copy(g.goblin.pos).add({ x: 6, y: -8, z: 10 });
-});
-await run(1.5);
-const bridge = await state();
-await shot('31-scene-bridge');
-await page.keyboard.press('Escape');
-await run(0.3);
-const after = await state();
-check(bridge.state === 'cutscene' && after.state === 'playing' && after.step === 3, 'chapter 6 bridge cutscene plays, then "Catch Mary Jane!" begins');
-
 // ---- every mission boots -------------------------------------------------------
 for (let n = 1; n <= 6; n++) {
   await page.keyboard.press(`Digit${n}`);
   await run(0.3);
-  for (let k = 0; k < 4; k++) {
-    const st = (await state()).state;
-    if (st === 'story') {
-      await page.waitForTimeout(450);
-      await page.keyboard.press('Enter');
-    } else if (st === 'cutscene') await page.keyboard.press('Escape');
-    else break;
+  if ((await state()).state === 'story') {
+    await page.keyboard.press('Enter');
     await run(0.3);
   }
   await page.keyboard.down('KeyW');

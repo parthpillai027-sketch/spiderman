@@ -11,8 +11,6 @@ import { Player } from './player.js';
 import { CameraRig } from './camera.js';
 import { Traffic, Pedestrians, Actor } from './npcs.js';
 import { HUD } from './hud.js';
-import { Cutscenes } from './cutscene.js';
-import { Voices } from './voice.js';
 import { MissionManager, MISSIONS } from './missions.js';
 import { loadSave, writeSave, defaultSave } from './save.js';
 import { SUITS } from './skins.js';
@@ -71,8 +69,6 @@ class Game {
 
     this.input = new Input(this.canvas);
     this.audio = new AudioSys();
-    this.voices = new Voices();
-    this.voices.setEnabled(this.save.voices !== false);
     this.particles = new Particles(this.scene);
     this.lines = new Lines(this.scene);
     this.markers = new Markers(this.scene);
@@ -86,8 +82,6 @@ class Game {
     this.peds = new Pedestrians(this);
     this.hud = new HUD(this);
     this.hud.buildMap(this.world);
-    this.cutscenes = new Cutscenes(this);
-    this.mode = 'story';
     this.missions = new MissionManager(this);
 
     this.player.setSuit(this.save.suit);
@@ -109,7 +103,7 @@ class Game {
 
   // Render one frame with every kind of object in view (characters, Goblin,
   // projectiles, markers) behind the loading screen, so shaders compile now
-  // instead of stalling the first cutscene or fight.
+  // instead of stalling the first mission or fight.
   warmup() {
     const p = this.player.pos;
     const temp = [];
@@ -290,45 +284,31 @@ class Game {
     else this.respawnT = 3;
   }
 
-  // mode 'story': play the chapters in order with cutscenes.
-  // mode 'free': the open city with no story guidance.
-  startGame(newGame, mode = 'story') {
+  startGame(newGame) {
     this.audio.init();
     if (newGame) {
       this.missions.abort();
-      const voices = this.save.voices;
       this.save = defaultSave();
-      this.save.voices = voices;
       this.persist();
       this.missions.collectibles.reset();
       this.enemies.clear();
       this.player.setSuit('classic');
     }
-    this.mode = mode;
-    this.missions.abort();
-    this.missions.freeRoamShown = false;
     this.hideMenus();
     this.hud.show(true);
     this.setTimeOfDay(this.save.timeOfDay || 'day', true);
     this.state = 'playing';
     this.input.requestLock();
-    const i = this.save.missionIndex;
-    const chapter = mode === 'story' && i < MISSIONS.length ? i : -1;
-    const start = (chapter >= 0 ? MISSIONS[chapter].start(this.world) : this.world.landmarks.start).clone().add(new THREE.Vector3(0, 0.5, 0));
+    const start = this.world.landmarks.start.clone().add(new THREE.Vector3(0, 0.5, 0));
     this.player.spawn(start, Math.PI / 2);
     this.cameraRig.snapBehind(-Math.PI / 2);
-    if (chapter >= 0) this.missions.start(chapter);
-  }
-
-  playCutscene(def) {
-    return this.cutscenes.play(def);
+    if (newGame || this.save.missionIndex === 0) this.missions.start(0);
   }
 
   pause() {
     if (this.state !== 'playing') return;
     this.state = 'paused';
     this.input.releaseLock();
-    this.voices.stop();
     this.renderPauseMenu();
     $('pause').classList.remove('hidden');
     this.audio.setWind(0);
@@ -351,17 +331,10 @@ class Game {
     this.hud.show(false);
     this.hideMenus();
     $('title').classList.remove('hidden');
-    const i = this.save.missionIndex;
-    $('btn-continue').classList.toggle('hidden', !this.save.started || i >= MISSIONS.length);
-    if (i < MISSIONS.length) $('continue-ch').textContent = `Chapter ${i + 1}: ${MISSIONS[i].title}`;
-    $('btn-new').textContent = this.save.started ? 'New Story' : 'Story Mode';
-    if (this.refreshVoiceLabel) this.refreshVoiceLabel();
-    $('story-progress').innerHTML = MISSIONS.map((m, k) => `<li class="${k < i ? 'done' : k === i ? 'next' : ''}">${m.title}</li>`).join('');
+    $('btn-continue').classList.toggle('hidden', !this.save.started);
   }
 
   quitToTitle() {
-    if (this.cutscenes.playing) this.cutscenes.skip();
-    this.voices.stop();
     this.missions.abort();
     this.enemies.clear();
     this.combat.clear();
@@ -372,29 +345,8 @@ class Game {
 
   setupMenus() {
     const click = (id, fn) => $(id).addEventListener('click', () => { this.audio.init(); this.audio.play('ui'); fn(); });
-    click('btn-new', () => this.startGame(true, 'story'));
-    click('btn-continue', () => this.startGame(false, 'story'));
-    click('btn-free', () => this.startGame(false, 'free'));
-    const voiceLabel = () => {
-      const on = this.save.voices !== false;
-      const txt = !this.voices.supported ? 'Voices: N/A' : `Voices: ${on ? 'On' : 'Off'}`;
-      for (const id of ['btn-voices', 'btn-voices-pause']) {
-        $(id).textContent = txt;
-        $(id).disabled = !this.voices.supported;
-        $(id).setAttribute('aria-pressed', String(on));
-      }
-    };
-    const toggleVoices = () => {
-      this.save.voices = this.save.voices === false;
-      this.voices.setEnabled(this.save.voices);
-      this.persist();
-      voiceLabel();
-      if (this.save.voices) this.voices.speak('spidey', 'Voices on.');
-    };
-    click('btn-voices', toggleVoices);
-    click('btn-voices-pause', toggleVoices);
-    this.refreshVoiceLabel = voiceLabel;
-    voiceLabel();
+    click('btn-new', () => this.startGame(true));
+    click('btn-continue', () => this.startGame(false));
     click('btn-controls', () => this.openPanel('controls'));
     click('btn-credits', () => this.openPanel('credits'));
     click('btn-resume', () => this.resume());
@@ -491,7 +443,6 @@ class Game {
         this.enemies.clear();
         const pos = m.start(this.world).clone().add(new THREE.Vector3(0, 1, 0));
         this.player.spawn(pos);
-        this.mode = 'story';
         this.missions.start(i, { replay: true });
         this.resume();
       });
@@ -530,22 +481,8 @@ class Game {
         this.titleTick(dt);
       }
       else if (this.state === 'story' && this.input.pressed('confirm')) this.hud.closeStory();
-      else if (this.state === 'cutscene') this.cutsceneTick(dt);
       this.input.endFrame();
     }
-  }
-
-  // cutscene frame: dialogue input, the scene itself, and the living city around it
-  cutsceneTick(dt) {
-    if (this.input.pressed('pause')) this.cutscenes.skip();
-    else if (this.input.pressed('confirm') || this.input.pressed('attack')) this.cutscenes.advance();
-    this.cutscenes.update(dt);
-    this.traffic.update(dt);
-    this.peds.update(dt);
-    this.particles.update(dt);
-    this.markers.update(dt);
-    this.world.update(dt);
-    this.updateSky(dt);
   }
 
   // slow orbit over the skyline behind the title menu
@@ -594,13 +531,11 @@ class Game {
       }
     } else if (this.state === 'story') {
       if (this.input.pressed('confirm')) this.hud.closeStory();
-    } else if (this.state === 'cutscene') {
-      this.cutsceneTick(raw);
     } else if (this.state === 'paused') {
       if (this.input.pressed('pause') && this.input.usingPad) this.resume();
     } else if (this.state === 'title') {
       this.titleTick(raw);
-      if (this.input.usingPad && this.input.pressed('confirm')) this.startGame(!this.save.started, 'story');
+      if (this.input.usingPad && this.input.pressed('confirm')) this.startGame(!this.save.started);
     }
     this.renderer.render(this.scene, this.camera);
     this.input.endFrame();

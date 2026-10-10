@@ -236,37 +236,3 @@ td { padding: 4px 6px; border-top: 2px solid rgba(255, 255, 255, 0.12); }
   #collect { top: auto; bottom: 16px; }
   #hint { display: none; }
 }
-
-/* ---- title: story mode ---- */
-#title nav button small { display: block; font-family: var(--mono); font-size: 18px; text-transform: none; margin-top: 6px; color: #ffe0e0; }
-#title nav button.alt { background: #2a3550; box-shadow: inset -4px -4px 0 #161d2e, inset 4px 4px 0 #44557d, 0 4px 0 #000; font-size: 12px; padding: 12px; }
-#title nav button.alt:hover { background: #34426a; }
-.chapters-box { background: var(--panel); border: 3px solid #fff; padding: 10px 12px; }
-.chapters-box h3 { font-family: var(--pixel); font-size: 8px; color: #9fd3ff; margin: 0 0 6px; letter-spacing: 1px; line-height: 1.5; }
-#story-progress { margin: 0; padding-left: 22px; font-size: 18px; color: #999; }
-#story-progress li.done { color: #7dff9a; }
-#story-progress li.done::after { content: ' \2713'; }
-#story-progress li.next { color: #fff; }
-#story-progress li.next::after { content: ' \25C0'; color: var(--gold); }
-
-/* ---- cutscenes ---- */
-#cutscene { position: fixed; inset: 0; z-index: 25; cursor: pointer; }
-#cutscene .bar { position: absolute; left: 0; right: 0; height: 11vh; background: #000; animation: bars 0.5s ease-out; }
-#cutscene .bar.top { top: 0; }
-#cutscene .bar.bottom { bottom: 0; }
-@keyframes bars { from { transform: scaleY(0); } }
-#dlg {
-  position: absolute; left: 50%; bottom: calc(11vh + 16px); transform: translateX(-50%);
-  width: min(820px, calc(100vw - 32px)); display: flex; gap: 14px; align-items: flex-start;
-  background: var(--panel); border: 4px solid #fff; box-shadow: 0 0 0 4px #000; padding: 12px 16px; min-height: 96px;
-}
-#dlg.narration { border-color: #9fd3ff; }
-#dlg.narration #dlg-text { font-style: italic; color: #cfe6ff; }
-#dlg-face { width: 64px; height: 64px; flex: none; image-rendering: pixelated; border: 3px solid #000; background: #000; }
-.dlg-body { min-width: 0; flex: 1; }
-#dlg-name { font-family: var(--pixel); font-size: 11px; color: var(--gold); display: block; margin-bottom: 6px; }
-#dlg-text { margin: 0; font-size: 26px; line-height: 1.1; min-height: 2.2em; }
-#dlg-next { position: absolute; right: 12px; bottom: 6px; color: var(--gold); opacity: 0; font-size: 14px; }
-#dlg-next.show { opacity: 1; animation: blink 0.8s steps(2) infinite; }
-#dlg-skip { position: absolute; right: 16px; top: calc(11vh + 12px); font-size: 10px; padding: 8px 12px; background: rgba(0, 0, 0, 0.6); box-shadow: none; border: 2px solid #fff; }
-@media (prefers-reduced-motion: reduce) { #cutscene .bar { animation: none; } }

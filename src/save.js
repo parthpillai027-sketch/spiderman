@@ -12,7 +12,6 @@ export function defaultSave() {
     started: false,
     finished: false,
     timeOfDay: 'day',
-    voices: true,
   };
 }
 
