@@ -315,24 +315,42 @@ class Game {
     const click = (id, fn) => $(id).addEventListener('click', () => { this.audio.init(); this.audio.play('ui'); fn(); });
     click('btn-new', () => this.startGame(true));
     click('btn-continue', () => this.startGame(false));
-    click('btn-controls', () => $('controls').classList.remove('hidden'));
-    click('btn-credits', () => $('credits').classList.remove('hidden'));
+    click('btn-controls', () => this.openPanel('controls'));
+    click('btn-credits', () => this.openPanel('credits'));
     click('btn-resume', () => this.resume());
-    click('btn-pause-controls', () => $('controls').classList.remove('hidden'));
+    click('btn-pause-controls', () => this.openPanel('controls'));
     click('btn-quit', () => this.quitToTitle());
     click('btn-music', () => {
       const on = this.audio.toggleMusic();
       $('btn-music').textContent = `Music: ${on ? 'On' : 'Off'}`;
     });
     for (const b of document.querySelectorAll('[data-close]')) {
-      b.addEventListener('click', () => $(b.dataset.close).classList.add('hidden'));
+      b.addEventListener('click', () => this.closePanel(b.dataset.close));
     }
+    // info panels also close on a click outside the card or on Esc
+    for (const id of ['controls', 'credits']) {
+      $(id).addEventListener('click', (e) => { if (e.target === $(id)) this.closePanel(id); });
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.code !== 'Escape') return;
+      for (const id of ['controls', 'credits']) if (!$(id).classList.contains('hidden')) this.closePanel(id);
+    });
     $('sens').addEventListener('input', (e) => {
       this.input.sensitivity = 0.0012 + (e.target.value / 100) * 0.004;
     });
     this.canvas.addEventListener('click', () => {
       if (this.state === 'playing') this.input.requestLock();
     });
+  }
+
+  openPanel(id) {
+    $(id).classList.remove('hidden');
+    $(id).querySelector('.close-x').focus();
+  }
+
+  closePanel(id) {
+    $(id).classList.add('hidden');
+    this.audio.play('ui');
   }
 
   renderPauseMenu() {

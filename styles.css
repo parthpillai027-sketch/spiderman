@@ -58,6 +58,14 @@ button:disabled { background: #444; box-shadow: inset -4px -4px 0 #222, inset 4p
   background: rgba(0, 0, 0, 0.55); z-index: 20;
 }
 #loading { background: #0b0d14; z-index: 50; }
+/* info panels open on top of the title screen and the pause menu */
+#controls, #credits { z-index: 40; background: rgba(0, 0, 0, 0.85); }
+.card.wide { position: relative; }
+.close-x {
+  position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; padding: 0;
+  font-family: system-ui, sans-serif; font-size: 18px; line-height: 36px; text-align: center;
+}
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 #story { background: rgba(0, 0, 0, 0.45); cursor: pointer; }
 #story .card { border-color: var(--red); max-width: 720px; }
 #story-body p { font-size: 26px; }
