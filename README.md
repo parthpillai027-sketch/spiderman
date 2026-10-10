@@ -35,16 +35,18 @@ Add `?debug` to the URL to get an FPS and draw-call counter, mission skip (keys 
 | Suits | Classic, Homemade (wrestling outfit) and Battle-Damaged, unlocked through the story. |
 | Presentation | Day / dusk / night with lit windows, stars and moon (the bridge finale is at night). Minimap, full map, waypoint arrow, objective tracker, boss bar, subtitles, story cards, pause menu with chapter select, gamepad support. |
 
-### Story (Spider-Man, 2002)
+### Story Mode (Spider-Man, 2002)
 
-1. **With Great Power** – tutorial: swinging rings, wall-crawl, point launch, first mugging.
-2. **The Carjacker** – chase the getaway car with webs, then beat the carjacker's crew at the warehouses.
-3. **Crime Wave** – three crimes across the city, then the Daily Bugle headline.
-4. **Unity Day** – defuse the Goblin's pumpkin bombs at the festival, then drive him off.
-5. **Up In Flames** – rescue civilians from a burning building before the timer runs out.
-6. **The Bridge** – catch Mary Jane, save the tram, and take on the Green Goblin in the final fight.
+The title screen offers **Story Mode** (or **Continue Story**, which drops you straight into your next chapter) and **Free Roam** (the open city with street crimes and collectibles, no story). Each chapter opens with a story card and an in-engine cutscene: blocky stand-ins for Peter, Uncle Ben, Mary Jane, Harry, Norman Osborn, J. Jonah Jameson and others act the scene out on location, with framed camera shots, letterboxing, and a dialogue box with pixel portraits and typewriter text. Click / Enter / ✕ advances a line, and Esc skips the scene. Scenes are skipped automatically when you retry a failed mission.
 
-Story beats follow the film. All dialogue and text is original writing; no lines are quoted from the movie.
+1. **With Great Power** – *Uncle Ben's talk on the Parker roof.* Tutorial: swinging rings, wall-crawl, point launch, first mugging.
+2. **The Carjacker** (dusk) – *A police officer breaks the news.* Chase the getaway car with webs, then beat the carjacker's crew at the warehouses.
+3. **Crime Wave** – *Haggling with Jameson on the Bugle roof.* Three crimes across the city, then the Daily Bugle headline.
+4. **Unity Day** – *Norman, Harry, MJ and Peter at the festival.* Defuse the Goblin's pumpkin bombs, then drive him off.
+5. **Up In Flames** (dusk) – *The fire chief asks for help.* Rescue civilians before the timer runs out.
+6. **The Bridge** (night) – *The Goblin's ultimatum.* Catch Mary Jane, save the tram, and beat the Green Goblin, followed by an ending scene in the park.
+
+Story beats follow the film. All dialogue and text is original writing; no lines are quoted from the movie. Scene scripts live in `src/story.js` and the cutscene engine in `src/cutscene.js`.
 
 ## Controls
 
@@ -80,6 +82,8 @@ src/
   combat.js       Targeting, webs, bullets, pumpkin bombs, razor bats
   npcs.js         Instanced traffic and pedestrians, scripted actors
   missions.js     Mission runtime, the six chapters, street crimes, backpacks
+  story.js        Story Mode cutscene scripts (one per chapter + ending)
+  cutscene.js     Cutscene engine: shots, actors, dialogue box, skip
   hud.js          HUD, minimap, story cards
   audio.js        Synthesized SFX and an original music loop
   input.js        Keyboard/mouse/gamepad action mapping

@@ -325,7 +325,16 @@ function humanSkin(s) {
     p.rect(4, 8, 2, 2, s.eyes ?? 0x2a4a7a); p.rect(10, 8, 2, 2, s.eyes ?? 0x2a4a7a);
     if (!mask) p.rect(7, 10, 2, 2, mul(skin, 0.85));
     p.rect(6, 12, 4, 1, s.lips ?? mul(skin, 0.6));
+    if (s.mustache) p.rect(4, 11, 8, 1, s.mustache);
+    if (s.glasses) {
+      p.rect(2, 7, 5, 4, s.glasses); p.rect(9, 7, 5, 4, s.glasses);
+      p.rect(3, 8, 3, 2, 0xd8e4ee); p.rect(10, 8, 3, 2, 0xd8e4ee);
+      p.rect(4, 8, 1, 2, s.eyes ?? 0x2a4a7a); p.rect(11, 8, 1, 2, s.eyes ?? 0x2a4a7a);
+      p.rect(7, 8, 2, 1, s.glasses);
+    }
+    if (s.greyTemples) { p.rect(0, 4, 2, 3, s.greyTemples); p.rect(14, 4, 2, 3, s.greyTemples); }
     if (hat) { p.rect(0, 0, 16, 5, hat, 0.12); p.rect(0, 5, 16, 1, mul(hat, 0.7)); }
+    if (s.badgeHat) p.rect(7, 2, 2, 2, s.badgeHat);
   };
   const side = (p) => {
     p.fill(mask || skin, 0.05);
@@ -343,6 +352,9 @@ function humanSkin(s) {
   const torso = (front) => (p) => {
     p.fill(jacket, 0.12);
     if (front && jacket !== shirt) p.rect(5, 0, 6, 20, shirt, 0.1);
+    if (front && s.tie) p.rect(7, 1, 2, 12, s.tie, 0.1);
+    if (front && s.badge) p.rect(2, 4, 2, 2, s.badge);
+    if (s.stripe) p.rect(0, 14, p.w, 2, s.stripe);
     if (s.dress) p.rect(0, 16, p.w, 8, s.dress, 0.1);
     else { p.rect(0, 20, p.w, 4, pants, 0.1); p.rect(0, 20, p.w, 1, 0x1a1a1a); }
   };
@@ -376,6 +388,15 @@ export const HUMAN_SPECS = {
   civ1: { skin: 0x9a6640, hair: 0x111111, shirt: 0xf0c419, jacket: 0x444f7a, pants: 0x222244 },
   civ2: { skin: 0xf1caa6, hair: 0xd9b45a, shirt: 0x8e44ad, pants: 0x5d6d7e, longHair: true },
   civ3: { skin: 0x6b4226, hair: 0x1a1a1a, shirt: 0xe67e22, pants: 0x2c3e50, hat: 0xc0392b },
+  // story cast (blocky stand-ins, no actor likenesses)
+  peter: { skin: 0xe8b996, hair: 0x5a3a22, shirt: 0x8fa9c9, jacket: 0x3b5d8f, pants: 0x3a3f4a, eyes: 0x4a3020 },
+  ben: { skin: 0xe0ac8a, hair: 0xb8b8b8, shirt: 0xd8cfb8, jacket: 0x7a5f45, pants: 0x4a4a52, glasses: 0x3a3028, eyes: 0x5a4030 },
+  may: { skin: 0xf0c4a8, hair: 0xd4d4d4, shirt: 0xb48ab8, jacket: 0xb48ab8, dress: 0x7a5a8a, bareArms: false, shoes: 0x3a2a2a, glasses: 0x8a7a6a },
+  harry: { skin: 0xf0c8a6, hair: 0x6a4a2a, jacket: 0x2a2a34, shirt: 0xd0d0d0, pants: 0x22222a, eyes: 0x3d5a7a },
+  norman: { skin: 0xe6b898, hair: 0x9a7a5a, jacket: 0x2e3440, shirt: 0xf0f0f0, tie: 0x6a1a1a, pants: 0x2e3440, greyTemples: 0xbcbcbc, eyes: 0x3a5a3a },
+  jameson: { skin: 0xe8b090, hair: 0x2a2a2a, jacket: 0xe8e8f0, shirt: 0xe8e8f0, tie: 0x2a3a6a, pants: 0x5a5a62, mustache: 0x2a2a2a, greyTemples: 0xbcbcbc },
+  officer: { skin: 0xa86f4b, hair: 0x111111, jacket: 0x1f3a6b, shirt: 0x1f3a6b, pants: 0x1a2a4a, hat: 0x1a2a4a, badgeHat: 0xd4b02a, badge: 0xd4b02a },
+  chief: { skin: 0xd8a47f, hair: 0x3a2a1a, jacket: 0x2b2b2b, shirt: 0x2b2b2b, pants: 0x2b2b2b, hat: 0xc8a02a, stripe: 0xd4d44a, mustache: 0x3a2a1a },
 };
 
 const cache = new Map();
