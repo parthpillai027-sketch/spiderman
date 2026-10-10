@@ -481,3 +481,42 @@ export function billboardTexture(kind) {
   }
   return toTexture(p.done(), { repeat: false, mip: false });
 }
+
+// ---------------------------------------------------------------------------
+// Night-time window glow. Each facade tile (64px = one 4x4-block bay) has its
+// glass areas listed here; the glow texture covers 8x8 bays at 32px per bay
+// and lights a random subset, so lit windows don't repeat building to building.
+const PANELS = [];
+for (let y = 0; y < 64; y += 16) for (let x = 0; x < 64; x += 16) PANELS.push([x + 1, y + 1, 14, 14]);
+const GLASS = {
+  brick: [[20, 12, 24, 36]],
+  concrete: [[22, 11, 20, 40]],
+  deco: [[15, 6, 34, 40]],
+  modern: [[2, 14, 14, 30], [18, 14, 14, 30], [34, 14, 14, 30], [50, 14, 14, 30]],
+  glass: PANELS,
+  oscorp: PANELS,
+  brownstone: [[10, 14, 14, 34], [40, 14, 14, 34]],
+  warehouse: [[20, 4, 24, 10]],
+};
+const LIT = [0xffd27a, 0xffe2a8, 0xffc864, 0xfff0d0, 0xa8d8ff];
+
+export function glowTexture(style) {
+  const key = `glow-${style}`;
+  if (cache[key]) return cache[key];
+  const p = new Painter(256, 256, 900 + style.length);
+  p.fill(0x000000);
+  const chance = style === 'warehouse' ? 0.15 : style === 'glass' || style === 'oscorp' ? 0.3 : 0.45;
+  for (let by = 0; by < 8; by++) {
+    for (let bx = 0; bx < 8; bx++) {
+      for (const [x, y, w, h] of GLASS[style] || []) {
+        if (p.rand() > chance) continue;
+        const col = LIT[Math.floor(p.rand() * LIT.length)];
+        p.rect(bx * 32 + (x >> 1), by * 32 + (y >> 1), Math.max(1, w >> 1), Math.max(1, h >> 1), col, 0.15);
+      }
+    }
+  }
+  const t = p.texture();
+  t.repeat.set(1 / 8, 1 / 8);
+  cache[key] = t;
+  return t;
+}

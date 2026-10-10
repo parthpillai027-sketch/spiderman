@@ -137,6 +137,30 @@ await shot('05-wall');
 await page.keyboard.up('KeyW');
 void wallSetup;
 
+// corner wrap: crawl sideways off the end of a free-standing wall
+const corner = await page.evaluate(() => {
+  const g = window.__game;
+  const V = (x, y, z) => g.player.pos.clone().set(x, y, z);
+  const b = g.world.buildings.find((k) => k.top > 30 && k.x1 < 300
+    && !g.world.pointInside(V(k.x0 - 1, 3, k.z1 + 1)) && !g.world.pointInside(V(k.x0 + 1, 3, k.z1 + 1)));
+  g.player.pos.set(b.x0 - 0.36, 3, b.z1 - 1.5);
+  g.player.vel.set(0, 0, 0);
+  g.player.state = 'wall';
+  g.player.wall.normal.set(-1, 0, 0);
+  g.player.wall.collider = g.world.pointInside(V(b.x0 + 0.5, 3, b.z1 - 1.5));
+  g.cameraRig.yaw = -Math.PI / 2;
+  return !!g.player.wall.collider;
+});
+await page.keyboard.down('KeyD');
+let wrapped = false;
+for (let i = 0; i < 8; i++) {
+  await run(0.2);
+  const w = await page.evaluate(() => ({ s: window.__game.player.state, nz: window.__game.player.wall.normal.z }));
+  if (w.s === 'wall' && w.nz === 1) wrapped = true;
+}
+await page.keyboard.up('KeyD');
+check(corner && wrapped, 'crawling sideways wraps around a building corner');
+
 // ---- combat --------------------------------------------------------------------
 await page.evaluate(() => {
   const g = window.__game;
@@ -173,6 +197,11 @@ for (let n = 1; n <= 6; n++) {
   await run(1.0);
   s = await log(`mission ${n}`);
   check(s.mission !== null && s.state === 'playing', `mission ${n} starts and runs`);
+  if (n === 6) {
+    await run(3);
+    const tod = await page.evaluate(() => ({ name: window.__game.todName, glow: window.__game.world.facadeMaterials[0].emissiveIntensity }));
+    check(tod.name === 'night' && tod.glow > 0.8, `the bridge finale plays at night with lit windows (glow ${tod.glow.toFixed(2)})`);
+  }
   await shot(`10-mission-${n}`);
 }
 

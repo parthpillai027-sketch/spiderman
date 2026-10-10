@@ -11,6 +11,7 @@ export function defaultSave() {
     crimes: 0,
     started: false,
     finished: false,
+    timeOfDay: 'day',
   };
 }
 

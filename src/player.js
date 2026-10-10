@@ -348,6 +348,8 @@ export class Player {
     if (res.wall) {
       this.wall.normal.copy(res.wall.normal);
       this.wall.collider = res.wall.collider;
+    } else if (this.wrapCorner()) {
+      // crawled around the corner onto the neighbouring face
     } else {
       const c = this.wall.collider;
       if (c && this.pos.y > c.max.y - 1.4) {
@@ -360,6 +362,31 @@ export class Player {
       this.state = 'air';
       this.t.wallLock = 0.3;
     }
+  }
+
+  // Sliding sideways off the end of a wall: hop onto the adjacent face of the
+  // same box instead of falling off.
+  wrapCorner() {
+    const c = this.wall.collider;
+    if (!c || this.pos.y > c.max.y - 1.4) return false;
+    const n = this.wall.normal;
+    const a = n.x !== 0 ? 'z' : 'x';
+    const b = a === 'z' ? 'x' : 'z';
+    const nb = n.x !== 0 ? n.x : n.z;
+    const inset = (side) => (side > 0 ? c.max[b] - 0.5 : c.min[b] + 0.5);
+    let dir = 0;
+    if (this.pos[a] - HW >= c.max[a] - 0.05) dir = 1;
+    else if (this.pos[a] + HW <= c.min[a] + 0.05) dir = -1;
+    if (!dir) return false;
+    const next = this.pos.clone();
+    next[a] = dir > 0 ? c.max[a] + HW + 0.02 : c.min[a] - HW - 0.02;
+    next[b] = inset(nb);
+    // something else (a neighbouring building) is in the way
+    if (this.game.world.pointInside(new THREE.Vector3(next.x, next.y + 0.9, next.z), -0.05)) return false;
+    this.pos.copy(next);
+    this.wall.normal.set(0, 0, 0);
+    this.wall.normal[a] = dir;
+    return true;
   }
 
   zip() {

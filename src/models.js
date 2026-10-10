@@ -1,18 +1,30 @@
 // Blocky character rigs (Minecraft proportions) and a pose animator.
 import * as THREE from 'three';
-import { skinMaterials } from './skins.js';
+import { skinMaterials, ATLAS } from './skins.js';
 
 export const PX = 1.8 / 32; // one "skin pixel" in world units -> 1.8 block tall characters
 
+const SIZES = { head: [8, 8, 8], body: [8, 12, 4], armL: [4, 12, 4], armR: [4, 12, 4], legL: [4, 12, 4], legR: [4, 12, 4] };
 const geoCache = new Map();
-function boxGeo(w, h, d) {
-  const k = `${w},${h},${d}`;
-  if (!geoCache.has(k)) geoCache.set(k, new THREE.BoxGeometry(w * PX, h * PX, d * PX));
-  return geoCache.get(k);
+
+// Box for one body part with UVs pointing into that part's row of the skin atlas.
+function partGeo(part) {
+  if (geoCache.has(part)) return geoCache.get(part);
+  const [w, h, d] = SIZES[part];
+  const geo = new THREE.BoxGeometry(w * PX, h * PX, d * PX);
+  const uv = geo.attributes.uv;
+  const { faces } = ATLAS.rows[part];
+  for (let i = 0; i < uv.count; i++) {
+    const f = faces[Math.floor(i / 4)];
+    const u = uv.getX(i), v = uv.getY(i);
+    uv.setXY(i, (f.x + u * f.w) / ATLAS.W, 1 - (f.y + (1 - v) * f.h) / ATLAS.H);
+  }
+  geoCache.set(part, geo);
+  return geo;
 }
 
-function mesh(geo, mats) {
-  const m = new THREE.Mesh(geo, mats);
+function mesh(geo, mat) {
+  const m = new THREE.Mesh(geo, mat);
   m.castShadow = true;
   return m;
 }
@@ -20,7 +32,7 @@ function mesh(geo, mats) {
 const webMat = new THREE.MeshLambertMaterial({ color: 0xf2f2f2, transparent: true, opacity: 0.85 });
 
 export function buildCharacter(skinKey, { scale = 1 } = {}) {
-  const mats = skinMaterials(skinKey);
+  const mat = skinMaterials(skinKey);
   const root = new THREE.Group();
   const tilt = new THREE.Group();
   tilt.position.y = 0.95;
@@ -31,21 +43,21 @@ export function buildCharacter(skinKey, { scale = 1 } = {}) {
 
   const legR = new THREE.Group();
   legR.position.set(-2 * PX, 12 * PX, 0);
-  const legRMesh = mesh(boxGeo(4, 12, 4), mats.legR);
+  const legRMesh = mesh(partGeo('legR'), mat);
   legRMesh.position.y = -6 * PX;
   legR.add(legRMesh);
   const legL = new THREE.Group();
   legL.position.set(2 * PX, 12 * PX, 0);
-  const legLMesh = mesh(boxGeo(4, 12, 4), mats.legL);
+  const legLMesh = mesh(partGeo('legL'), mat);
   legLMesh.position.y = -6 * PX;
   legL.add(legLMesh);
 
-  const torso = mesh(boxGeo(8, 12, 4), mats.body);
+  const torso = mesh(partGeo('body'), mat);
   torso.position.y = 18 * PX;
 
   const armR = new THREE.Group();
   armR.position.set(-6 * PX, 22 * PX, 0);
-  const armRMesh = mesh(boxGeo(4, 12, 4), mats.armR);
+  const armRMesh = mesh(partGeo('armR'), mat);
   armRMesh.position.y = -4 * PX;
   armR.add(armRMesh);
   const handR = new THREE.Object3D();
@@ -54,7 +66,7 @@ export function buildCharacter(skinKey, { scale = 1 } = {}) {
 
   const armL = new THREE.Group();
   armL.position.set(6 * PX, 22 * PX, 0);
-  const armLMesh = mesh(boxGeo(4, 12, 4), mats.armL);
+  const armLMesh = mesh(partGeo('armL'), mat);
   armLMesh.position.y = -4 * PX;
   armL.add(armLMesh);
   const handL = new THREE.Object3D();
@@ -63,7 +75,7 @@ export function buildCharacter(skinKey, { scale = 1 } = {}) {
 
   const head = new THREE.Group();
   head.position.y = 24 * PX;
-  const headMesh = mesh(boxGeo(8, 8, 8), mats.head);
+  const headMesh = mesh(partGeo('head'), mat);
   headMesh.position.y = 4 * PX;
   head.add(headMesh);
 
@@ -81,13 +93,9 @@ export function buildCharacter(skinKey, { scale = 1 } = {}) {
 }
 
 export function setSkin(rig, skinKey) {
-  const mats = skinMaterials(skinKey);
-  rig.legR.children[0].material = mats.legR;
-  rig.legL.children[0].material = mats.legL;
-  rig.armR.children[0].material = mats.armR;
-  rig.armL.children[0].material = mats.armL;
-  rig.head.children[0].material = mats.head;
-  rig.torso.material = mats.body;
+  const mat = skinMaterials(skinKey);
+  for (const part of [rig.legR, rig.legL, rig.armR, rig.armL, rig.head]) part.children[0].material = mat;
+  rig.torso.material = mat;
   rig.skin = skinKey;
 }
 

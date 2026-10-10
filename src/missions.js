@@ -538,6 +538,7 @@ export const MISSIONS = [
   {
     id: 'up-in-flames',
     title: 'Up In Flames',
+    time: 'dusk',
     start: (w) => {
       const b = w.landmarks.burning;
       return V((b.x0 + b.x1) / 2, SIDEWALK_H, b.z1 + 9);
@@ -625,6 +626,7 @@ export const MISSIONS = [
   {
     id: 'the-bridge',
     title: 'The Bridge',
+    time: 'night',
     start: (w) => V(296, SIDEWALK_H, 0),
     reward: 'damaged',
     steps: [
@@ -796,6 +798,7 @@ export class MissionManager {
     const def = MISSIONS[i];
     const ctx = new Ctx(this, def, i, opts);
     this.active = { def, ctx, step: -1 };
+    this.game.setTimeOfDay(def.time || this.game.save.timeOfDay);
     this.game.hud.toast(def.title.toUpperCase(), `Mission ${i + 1} of ${MISSIONS.length}`);
     this.game.save.started = true;
     this.nextStep();
@@ -882,6 +885,7 @@ export class MissionManager {
     this.game.audio.play('success');
     this.freeRoamShown = false;
     this.crimes.cooldown = 30;
+    this.game.setTimeOfDay(save.timeOfDay);
   }
 
   fail(reason) {
@@ -911,6 +915,7 @@ export class MissionManager {
     this.failTimer = 0;
     this.removeStartMarker();
     this.game.hud.objective(null);
+    this.game.setTimeOfDay(this.game.save.timeOfDay);
   }
 }
 

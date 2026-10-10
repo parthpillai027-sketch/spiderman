@@ -16,14 +16,14 @@ python3 -m http.server 5173
 
 Opening `index.html` straight from disk (`file://`) won't work, because browsers block ES modules there.
 
-Add `?debug` to the URL to get an FPS counter, mission skip (keys `1`–`6`) and god mode (`G`).
+Add `?debug` to the URL to get an FPS and draw-call counter, mission skip (keys `1`–`6`) and god mode (`G`).
 
 ## What's in the prototype
 
 | PS5 Spider-Man pillar | Block City implementation |
 | --- | --- |
 | Web-swinging | Real pendulum physics on a rope constraint. Anchors come from nearby buildings, and holding swing chains swings automatically. Speed-based FOV, speed lines and wind audio. |
-| Parkour / wall-run | Sprinting into any wall sticks you to it. Hold swing to wall-run, and you vault onto the roof at the top. Wall jumps. |
+| Parkour / wall-run | Sprinting into any wall sticks you to it. Hold swing to wall-run, crawl sideways around building corners, and vault onto the roof at the top. Wall jumps. |
 | Point launch / web zip | Aim at a ledge (a white diamond appears) and zip to it, then launch off. Tap jump in mid-air for a web-zip boost. |
 | Free-flow combat | Lunge strikes onto distant targets, a combo counter, heavy finisher every 5th hit, web shooter (3 webs = webbed up), and air-juggle hang time. |
 | Spider-sense | Enemy wind-ups trigger a directional HUD warning. A dodge during the warning is a **perfect dodge** (slow-mo + focus). |
@@ -33,7 +33,7 @@ Add `?debug` to the URL to get an FPS counter, mission skip (keys `1`–`6`) and
 | Open world | A 12×12-block Manhattan with a park, festival plaza, Oscorp Tower, Daily Bugle, a warehouse district, the river, a suspension bridge and Queens. Traffic and pedestrians are instanced. |
 | Side activities | Random police-scanner crimes (from Chapter 3 on) and 12 hidden backpacks, each with a memory of Peter's. |
 | Suits | Classic, Homemade (wrestling outfit) and Battle-Damaged, unlocked through the story. |
-| Presentation | Minimap, full map, waypoint arrow, objective tracker, boss bar, subtitles, story cards, pause menu with chapter select, gamepad support. |
+| Presentation | Day / dusk / night with lit windows, stars and moon (the bridge finale is at night). Minimap, full map, waypoint arrow, objective tracker, boss bar, subtitles, story cards, pause menu with chapter select, gamepad support. |
 
 ### Story (Spider-Man, 2002)
 

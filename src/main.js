@@ -17,6 +17,25 @@ import { SUITS } from './skins.js';
 import { mulberry32 } from './util.js';
 
 const $ = (id) => document.getElementById(id);
+
+// Time-of-day presets. Missions can force one (the film's finale is at night).
+const TOD = {
+  day: {
+    top: 0x3f74c8, mid: 0x9cc6f0, bottom: 0xf3d2ad, fog: 0xcdd9e6, fogNear: 160, fogFar: 820,
+    hemiSky: 0xd6e6ff, hemiGround: 0x8a7a66, hemi: 1.25, sun: 0xfff0d8, sunI: 2.3, dir: [-0.45, 0.78, 0.33],
+    glow: 0, disc: 0xfff6c8, stars: 0, cloud: 0x999999,
+  },
+  dusk: {
+    top: 0x23356e, mid: 0xc9806a, bottom: 0xffa860, fog: 0xc98a72, fogNear: 140, fogFar: 720,
+    hemiSky: 0xffc8a0, hemiGround: 0x5a4a5a, hemi: 0.95, sun: 0xff9a5a, sunI: 1.7, dir: [-0.85, 0.28, 0.3],
+    glow: 0.7, disc: 0xffa860, stars: 0.25, cloud: 0x8a5a50,
+  },
+  night: {
+    top: 0x03061a, mid: 0x0c1534, bottom: 0x1e2c58, fog: 0x10182f, fogNear: 110, fogFar: 640,
+    hemiSky: 0x7080c0, hemiGround: 0x202030, hemi: 0.6, sun: 0x9fb4ff, sunI: 0.7, dir: [0.4, 0.72, -0.4],
+    glow: 1.15, disc: 0xe8eeff, stars: 1, cloud: 0x1a2038,
+  },
+};
 const params = new URLSearchParams(location.search);
 const DEBUG = params.has('debug');
 
@@ -142,6 +161,62 @@ class Game {
     this.clouds = clouds;
     this.cloudPeriod = period;
     this.scene.add(clouds);
+
+    const starPos = [];
+    for (let i = 0; i < 900; i++) {
+      const a = r() * Math.PI * 2, y = 0.08 + r() * 0.92, rr = Math.sqrt(1 - y * y);
+      starPos.push(Math.cos(a) * rr * 1600, y * 1600, Math.sin(a) * rr * 1600);
+    }
+    const sg = new THREE.BufferGeometry();
+    sg.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+    this.stars = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+    this.scene.add(this.stars);
+
+    // live time-of-day state, eased toward this.todTarget every frame
+    this.tod = this.todState(TOD.day);
+    this.todTarget = this.todState(TOD.day);
+    this.todName = 'day';
+  }
+
+  todState(p) {
+    const c = (h) => new THREE.Color(h);
+    return {
+      top: c(p.top), mid: c(p.mid), bottom: c(p.bottom), fog: c(p.fog), hemiSky: c(p.hemiSky), hemiGround: c(p.hemiGround),
+      sun: c(p.sun), disc: c(p.disc), cloud: c(p.cloud), dir: new THREE.Vector3(...p.dir).normalize(),
+      fogNear: p.fogNear, fogFar: p.fogFar, hemi: p.hemi, sunI: p.sunI, glow: p.glow, stars: p.stars,
+    };
+  }
+
+  setTimeOfDay(name, instant = false) {
+    if (!TOD[name]) name = 'day';
+    this.todName = name;
+    this.todTarget = this.todState(TOD[name]);
+    if (instant) this.tod = this.todState(TOD[name]);
+  }
+
+  applyTimeOfDay(dt) {
+    const a = this.tod, b = this.todTarget;
+    const k = 1 - Math.exp(-1.5 * dt);
+    for (const key of ['top', 'mid', 'bottom', 'fog', 'hemiSky', 'hemiGround', 'sun', 'disc', 'cloud']) a[key].lerp(b[key], k);
+    for (const key of ['fogNear', 'fogFar', 'hemi', 'sunI', 'glow', 'stars']) a[key] += (b[key] - a[key]) * k;
+    a.dir.lerp(b.dir, k).normalize();
+    const u = this.sky.material.uniforms;
+    u.top.value.copy(a.top);
+    u.mid.value.copy(a.mid);
+    u.bottom.value.copy(a.bottom);
+    this.scene.fog.color.copy(a.fog);
+    this.scene.fog.near = a.fogNear;
+    this.scene.fog.far = a.fogFar;
+    this.hemi.color.copy(a.hemiSky);
+    this.hemi.groundColor.copy(a.hemiGround);
+    this.hemi.intensity = a.hemi;
+    this.sun.color.copy(a.sun);
+    this.sun.intensity = a.sunI;
+    this.sunDir.copy(a.dir);
+    this.sunDisc.material.color.copy(a.disc);
+    this.clouds.material.emissive.copy(a.cloud);
+    this.stars.material.opacity = a.stars;
+    for (const m of this.world.facadeMaterials) m.emissiveIntensity = a.glow;
   }
 
   resize() {
@@ -189,6 +264,7 @@ class Game {
     }
     this.hideMenus();
     this.hud.show(true);
+    this.setTimeOfDay(this.save.timeOfDay || 'day', true);
     this.state = 'playing';
     this.input.requestLock();
     const start = this.world.landmarks.start.clone().add(new THREE.Vector3(0, 0.5, 0));
@@ -287,6 +363,23 @@ class Game {
       suits.appendChild(b);
     }
 
+    const tod = $('tod');
+    tod.innerHTML = '';
+    for (const name of Object.keys(TOD)) {
+      const b = document.createElement('button');
+      b.className = `chip${(s.timeOfDay || 'day') === name ? ' on' : ''}`;
+      b.textContent = name[0].toUpperCase() + name.slice(1);
+      b.title = 'Free-roam time of day (some story chapters set their own)';
+      b.addEventListener('click', () => {
+        s.timeOfDay = name;
+        this.persist();
+        if (!this.missions.active) this.setTimeOfDay(name);
+        this.audio.play('ui');
+        this.renderPauseMenu();
+      });
+      tod.appendChild(b);
+    }
+
     const ch = $('chapters');
     ch.innerHTML = '';
     MISSIONS.forEach((m, i) => {
@@ -351,7 +444,8 @@ class Game {
     this._fpsN = (this._fpsN || 0) + 1;
     this._fpsT = (this._fpsT || 0) + raw;
     if (this._fpsT > 0.5) {
-      $('fps').textContent = `${Math.round(this._fpsN / this._fpsT)} FPS`;
+      const info = this.renderer.info.render;
+      $('fps').textContent = `${Math.round(this._fpsN / this._fpsT)} FPS · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris`;
       this._fpsN = 0;
       this._fpsT = 0;
     }
@@ -418,7 +512,9 @@ class Game {
 
   updateSky(dt) {
     const c = this.camera.position;
+    this.applyTimeOfDay(dt);
     this.sky.position.copy(c);
+    this.stars.position.copy(c);
     this.sunDisc.position.copy(c).addScaledVector(this.sunDir, 1500);
     this.sunDisc.lookAt(c);
     const focus = this.state === 'title' ? new THREE.Vector3(40, 0, 0) : this.player.pos;

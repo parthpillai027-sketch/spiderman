@@ -24,13 +24,15 @@
 
 - Static city: one merged `BufferGeometry` per material, so about 25 draw calls for the whole skyline.
 - Traffic (64 cars) and pedestrians (110) are instanced: 4 + 6 draw calls in total.
+- Each character's skin is a single atlas texture, so a character costs 6 draw calls (one per animated body part).
+- Night lighting adds no draw calls. Lit windows are an emissive map on the existing facade materials, varied per building with integer UV offsets, rather than real lights.
 - One 2048² shadow map that follows the player (±110 units).
 - Collision: AABB colliders in a 32-unit spatial hash; movement is sub-stepped at 0.4 units.
 
 ## Roadmap (next milestones)
 
-1. **Art pass:** texture atlas per character (cuts character draw calls from 36 to 6), night/day cycle with lit windows, more landmark buildings.
-2. **Traversal depth:** corner wrapping on walls, swing tricks, air tricks, landing rolls, perch points on water towers.
+1. **Art pass:** more landmark buildings, weather, window reflections. (The character skin atlas and day/dusk/night with lit windows are done.)
+2. **Traversal depth:** swing tricks, air tricks, landing rolls, perch points on water towers.
 3. **Combat depth:** gadgets (web bomb, impact web), environmental throws, more enemy archetypes (Goblin hench-bots for chapter 4).
 4. **Cinematics:** in-engine cutscenes for the chapter openers instead of story cards, plus VO with a sound-alike cast.
 5. **Content:** photo-op landmarks for the Daily Bugle, Harry Osborn side-missions, Thanksgiving dinner interior.

@@ -1,8 +1,8 @@
 // Character skins painted face-by-face, Minecraft-skin style.
 // Part sizes (in model pixels): head 8x8x8, body 8x12x4, arms/legs 4x12x4.
-// Textures are painted at 2 texels per model pixel.
+// Textures are painted at 2 texels per model pixel into one atlas per character.
 import * as THREE from 'three';
-import { Painter } from './textures.js';
+import { Painter, makeCanvas, toTexture } from './textures.js';
 
 const DIMS = {
   head: [16, 16, 16],
@@ -11,17 +11,41 @@ const DIMS = {
   leg: [8, 24, 8],
 };
 
-// Material order for BoxGeometry: +x (character's left), -x (right), +y, -y, +z (front), -z (back)
-function buildPart(kind, painters, seed) {
+// Face order matches BoxGeometry groups: +x (character's left), -x (right), +y, -y, +z (front), -z (back)
+const FACE_NAMES = ['left', 'right', 'top', 'bottom', 'front', 'back'];
+
+function faceSizes(kind) {
   const [w, h, d] = DIMS[kind];
-  const faces = [
-    ['left', d, h], ['right', d, h], ['top', w, d], ['bottom', w, d], ['front', w, h], ['back', w, h],
-  ];
-  return faces.map(([name, fw, fh], i) => {
-    const p = new Painter(fw, fh, seed + i * 13);
-    const fn = painters[name] || painters.all;
-    fn(p, name);
-    return new THREE.MeshLambertMaterial({ map: p.texture({ repeat: false, mip: false }) });
+  return [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+}
+
+// Every character packs all six body parts into one atlas (one row per part)
+// so a whole character renders with a single material.
+const PART_ROWS = [['head', 'head'], ['body', 'body'], ['armL', 'arm'], ['armR', 'arm'], ['legL', 'leg'], ['legR', 'leg']];
+export const ATLAS = (() => {
+  const rows = {};
+  let y = 0, W = 0;
+  for (const [part, kind] of PART_ROWS) {
+    let x = 0;
+    const faces = faceSizes(kind).map(([fw, fh]) => {
+      const f = { x, y, w: fw, h: fh };
+      x += fw;
+      return f;
+    });
+    rows[part] = { kind, faces };
+    W = Math.max(W, x);
+    y += Math.max(...faces.map((f) => f.h));
+  }
+  return { W, H: y, rows };
+})();
+
+function paintPart(ctx, part, painters, seed) {
+  const { faces } = ATLAS.rows[part];
+  faces.forEach((f, i) => {
+    const p = new Painter(f.w, f.h, seed + i * 13);
+    const name = FACE_NAMES[i];
+    (painters[name] || painters.all)(p, name);
+    ctx.drawImage(p.done(), f.x, f.y);
   });
 }
 
@@ -365,16 +389,12 @@ export function skinMaterials(key) {
   else spec = humanSkin(HUMAN_SPECS[key] || HUMAN_SPECS.civ0);
   let seed = 100;
   for (const ch of key) seed += ch.charCodeAt(0);
-  const mats = {
-    head: buildPart('head', spec.head, seed),
-    body: buildPart('body', spec.body, seed + 1),
-    armL: buildPart('arm', spec.armL, seed + 2),
-    armR: buildPart('arm', spec.armR, seed + 3),
-    legL: buildPart('leg', spec.legL, seed + 4),
-    legR: buildPart('leg', spec.legR, seed + 5),
-  };
-  cache.set(key, mats);
-  return mats;
+  const canvas = makeCanvas(ATLAS.W, ATLAS.H);
+  const ctx = canvas.getContext('2d');
+  PART_ROWS.forEach(([part], k) => paintPart(ctx, part, spec[part], seed + k));
+  const material = new THREE.MeshLambertMaterial({ map: toTexture(canvas, { repeat: false, mip: false }) });
+  cache.set(key, material);
+  return material;
 }
 
 export const SUITS = {

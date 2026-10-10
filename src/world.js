@@ -3,7 +3,7 @@
 // All static geometry is merged per material, and every solid volume is an
 // axis-aligned box collider stored in a spatial hash.
 import * as THREE from 'three';
-import { tex, signTexture, billboardTexture } from './textures.js';
+import { tex, signTexture, billboardTexture, glowTexture } from './textures.js';
 import { mulberry32, clamp, lerp } from './util.js';
 
 export const N = 12;
@@ -44,13 +44,13 @@ class GeoBuilder {
   }
   // faces: walls / top / bottom flags. su/sv = world units per texture tile.
   box(x0, y0, z0, x1, y1, z1, o = {}) {
-    const { su = 4, sv = su, ts = su, col = [1, 1, 1], walls = true, top = true, bottom = false, v0 = 0 } = o;
+    const { su = 4, sv = su, ts = su, col = [1, 1, 1], walls = true, top = true, bottom = false, u0 = 0, v0 = 0 } = o;
     const dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
     if (walls) {
-      this.quad([x1, y0, z1], [0, 0, -dz], [0, dy, 0], [1, 0, 0], dz / su, dy / sv, col, 0, v0);
-      this.quad([x0, y0, z0], [0, 0, dz], [0, dy, 0], [-1, 0, 0], dz / su, dy / sv, col, 0, v0);
-      this.quad([x0, y0, z1], [dx, 0, 0], [0, dy, 0], [0, 0, 1], dx / su, dy / sv, col, 0, v0);
-      this.quad([x1, y0, z0], [-dx, 0, 0], [0, dy, 0], [0, 0, -1], dx / su, dy / sv, col, 0, v0);
+      this.quad([x1, y0, z1], [0, 0, -dz], [0, dy, 0], [1, 0, 0], dz / su, dy / sv, col, u0, v0);
+      this.quad([x0, y0, z0], [0, 0, dz], [0, dy, 0], [-1, 0, 0], dz / su, dy / sv, col, u0 + 1, v0);
+      this.quad([x0, y0, z1], [dx, 0, 0], [0, dy, 0], [0, 0, 1], dx / su, dy / sv, col, u0 + 2, v0);
+      this.quad([x1, y0, z0], [-dx, 0, 0], [0, dy, 0], [0, 0, -1], dx / su, dy / sv, col, u0 + 3, v0);
     }
     if (top) this.quad([x0, y1, z1], [dx, 0, 0], [0, 0, -dz], [0, 1, 0], dx / ts, dz / ts, col, x0 / ts, -z1 / ts);
     if (bottom) this.quad([x0, y0, z0], [dx, 0, 0], [0, 0, dz], [0, -1, 0], dx / ts, dz / ts, col);
@@ -75,6 +75,12 @@ function makeMaterial(key) {
     m.polygonOffset = true;
     m.polygonOffsetFactor = key === 'lane' ? -1 : -2;
     m.polygonOffsetUnits = key === 'lane' ? -1 : -2;
+  }
+  if (FACADES.includes(key)) {
+    // lit windows, faded in by the time-of-day system
+    m.emissiveMap = glowTexture(key);
+    m.emissive.setHex(0xffffff);
+    m.emissiveIntensity = 0;
   }
   return m;
 }
@@ -346,8 +352,11 @@ export class World {
   }
 
   flush() {
+    this.facadeMaterials = this.facadeMaterials || [];
     for (const [key, gb] of Object.entries(this.G)) {
-      const mesh = new THREE.Mesh(gb.build(), makeMaterial(key));
+      const mat = makeMaterial(key);
+      if (FACADES.includes(key)) this.facadeMaterials.push(mat);
+      const mesh = new THREE.Mesh(gb.build(), mat);
       mesh.receiveShadow = true;
       mesh.castShadow = FACADES.includes(key) || ['planks', 'log', 'leaves', 'metal', 'girder', 'stone', 'darkroof'].includes(key);
       mesh.matrixAutoUpdate = false;
@@ -520,10 +529,12 @@ export class World {
     } else {
       tiers = [[x0, z0, x1, z1, h]];
     }
+    // integer tile offsets keep windows aligned but vary the night-time glow pattern
+    const u0 = Math.floor(r() * 8), vOff = Math.floor(r() * 8);
     let yb = base;
     for (const t of tiers) {
       const yt = base + t[4];
-      this.g(style).box(t[0], yb, t[1], t[2], yt, t[3], { top: false, su: 4, sv: 4, col: tint, v0: (yb - base) / 4 });
+      this.g(style).box(t[0], yb, t[1], t[2], yt, t[3], { top: false, su: 4, sv: 4, col: tint, u0, v0: (yb - base) / 4 + vOff });
       this.g('roof').box(t[0], yt, t[1], t[2], yt, t[3], { walls: false, ts: 2 });
       this.addCollider(t[0], yb === base ? 0 : yb, t[1], t[2], yt, t[3], { building: true });
       yb = yt;
