@@ -9,7 +9,7 @@ import { EnemyManager } from './enemies.js';
 import { Goblin } from './goblin.js';
 import { Player } from './player.js';
 import { CameraRig } from './camera.js';
-import { Traffic, Pedestrians } from './npcs.js';
+import { Traffic, Pedestrians, Actor } from './npcs.js';
 import { HUD } from './hud.js';
 import { Cutscenes } from './cutscene.js';
 import { MissionManager, MISSIONS } from './missions.js';
@@ -98,9 +98,41 @@ class Game {
     if (DEBUG) this.setupDebug();
     window.__game = this;
 
+    this.warmup();
     $('loading').classList.add('hidden');
     this.showTitle();
     this.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  // Render one frame with every kind of object in view (characters, Goblin,
+  // projectiles, markers) behind the loading screen, so shaders compile now
+  // instead of stalling the first cutscene or fight.
+  warmup() {
+    const p = this.player.pos;
+    const temp = [];
+    const at = (obj, x, y, z) => { obj.position.set(p.x + x, p.y + y, p.z + z); this.scene.add(obj); temp.push(obj); };
+    at(this.goblin.obj, 3, 1, -4);
+    const civ = new Actor(this, 'peter', p.clone().add(new THREE.Vector3(-2, 0, -3)));
+    temp.push(civ.root);
+    const bomb = new THREE.Mesh(this.combat.bombGeo, this.combat.bombMat);
+    at(bomb, 0, 2, -3);
+    const marker = this.markers.add(p.clone().add(new THREE.Vector3(1, 0, -6)));
+    this.particles.burst(p.clone().add(new THREE.Vector3(0, 1, -3)), 4);
+    this.particles.update(0.01);
+    this.lines.begin();
+    this.lines.line(p.clone(), p.clone().add(new THREE.Vector3(0, 5, -5)));
+    this.lines.end();
+    this.camera.position.copy(p).add(new THREE.Vector3(0, 3, 8));
+    this.camera.lookAt(p.x, p.y + 1, p.z - 3);
+    this.sun.target.position.copy(p);
+    this.sun.position.copy(p).addScaledVector(this.sunDir, 400);
+    this.renderer.render(this.scene, this.camera);
+    for (const o of temp) this.scene.remove(o);
+    this.markers.remove(marker);
+    this.particles.clear();
+    this.particles.update(0.01);
+    this.lines.begin();
+    this.lines.end();
   }
 
   // ---- scene dressing ---------------------------------------------------------
