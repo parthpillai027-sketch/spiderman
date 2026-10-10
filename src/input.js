@@ -46,6 +46,7 @@ export class Input {
     this.padAxes = [0, 0, 0, 0];
     this.lastLookInput = 0;
     this.usingPad = false;
+    this.freeLook = false;
 
     window.addEventListener('keydown', (e) => {
       if (['Space', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.code)) e.preventDefault();
@@ -63,11 +64,16 @@ export class Input {
     });
     window.addEventListener('mouseup', (e) => this.keys.delete(`Mouse${e.button}`));
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Mouse look works with pointer lock, and falls back to plain mouse
+    // movement over the game when the browser/frame refuses the lock.
     window.addEventListener('mousemove', (e) => {
-      if (!this.locked) return;
-      this.mouseDX += e.movementX;
-      this.mouseDY += e.movementY;
+      if (!this.locked && (!this.freeLook || e.target !== canvas)) return;
+      this.mouseDX += e.movementX || 0;
+      this.mouseDY += e.movementY || 0;
       this.lastLookInput = performance.now();
+    });
+    document.addEventListener('pointerlockerror', () => {
+      this.freeLook = true;
     });
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
@@ -79,9 +85,9 @@ export class Input {
     if (this.locked) return;
     try {
       const p = this.canvas.requestPointerLock();
-      if (p && p.catch) p.catch(() => {});
+      if (p && p.catch) p.catch(() => { this.freeLook = true; });
     } catch {
-      /* pointer lock unavailable (embedded/headless) */
+      this.freeLook = true; // pointer lock unavailable (embedded/headless)
     }
   }
 
@@ -124,10 +130,10 @@ export class Input {
   // Movement vector: x = strafe right, y = forward.
   move() {
     let x = 0, y = 0;
-    if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) y += 1;
-    if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) y -= 1;
-    if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) x += 1;
-    if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) x -= 1;
+    if (this.keys.has('KeyW')) y += 1;
+    if (this.keys.has('KeyS')) y -= 1;
+    if (this.keys.has('KeyD')) x += 1;
+    if (this.keys.has('KeyA')) x -= 1;
     x += this.padAxes[0];
     y -= this.padAxes[1];
     const m = Math.hypot(x, y);
@@ -137,8 +143,12 @@ export class Input {
 
   // Camera look delta in radians.
   look(dt) {
-    const dx = this.mouseDX * this.sensitivity + this.padAxes[2] * 2.6 * dt;
-    const dy = this.mouseDY * this.sensitivity + this.padAxes[3] * 1.8 * dt;
+    // arrow keys turn the camera too (laptops, or when the mouse can't be captured)
+    const ax = (this.keys.has('ArrowRight') ? 1 : 0) - (this.keys.has('ArrowLeft') ? 1 : 0);
+    const ay = (this.keys.has('ArrowDown') ? 1 : 0) - (this.keys.has('ArrowUp') ? 1 : 0);
+    if (ax || ay) this.lastLookInput = performance.now();
+    const dx = this.mouseDX * this.sensitivity + (this.padAxes[2] * 2.6 + ax * 2.2) * dt;
+    const dy = this.mouseDY * this.sensitivity + (this.padAxes[3] * 1.8 + ay * 1.4) * dt;
     return { dx, dy };
   }
 

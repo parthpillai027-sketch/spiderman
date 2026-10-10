@@ -1,6 +1,6 @@
 // Street thugs with token-based attack scheduling (only a couple of enemies
 // commit to an attack at once, so free-flow combat stays readable).
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { buildCharacter, animateRig } from './models.js';
 import { dampAngle, damp, rand, pick } from './util.js';
 

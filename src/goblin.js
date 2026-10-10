@@ -1,7 +1,7 @@
 // The Green Goblin boss: glider flight, pumpkin bombs, razor bats, dash
 // attacks. Web his glider or perfect-dodge his dash to knock him down, then
 // beat on him while he's grounded.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { buildCharacter, buildGlider, animateRig } from './models.js';
 import { clamp, damp, dampAngle, rand, pick } from './util.js';
 

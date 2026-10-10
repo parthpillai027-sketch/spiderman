@@ -1,7 +1,7 @@
 // Character skins painted face-by-face, Minecraft-skin style.
 // Part sizes (in model pixels): head 8x8x8, body 8x12x4, arms/legs 4x12x4.
 // Textures are painted at 2 texels per model pixel into one atlas per character.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { Painter, makeCanvas, toTexture } from './textures.js';
 
 const DIMS = {

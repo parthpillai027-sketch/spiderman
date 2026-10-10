@@ -1,7 +1,7 @@
 // Procedural pixel-art textures. Everything in the game is painted here at
 // 16 texels per block so the city reads like a voxel sandbox, with no
 // external image assets.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { mulberry32 } from './util.js';
 
 export function makeCanvas(w, h) {

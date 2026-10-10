@@ -1,5 +1,5 @@
 // Ambient life (instanced traffic and pedestrians) plus scripted actors.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { buildCharacter, animateRig, PX } from './models.js';
 import { N, CELL, X0, Z0, BW, SIDEWALK_H } from './world.js';
 import { damp, mulberry32 } from './util.js';

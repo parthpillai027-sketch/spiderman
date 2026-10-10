@@ -1,6 +1,6 @@
 // Third-person orbit camera with collision, speed-based FOV and auto-follow
 // while traversing (the "cinematic swing cam").
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { clamp, damp, dampAngle } from './util.js';
 
 export class CameraRig {

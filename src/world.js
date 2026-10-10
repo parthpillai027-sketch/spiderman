@@ -2,7 +2,7 @@
 // warehouse district, the river, a suspension bridge and Queens beyond it.
 // All static geometry is merged per material, and every solid volume is an
 // axis-aligned box collider stored in a spatial hash.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { tex, signTexture, billboardTexture, glowTexture } from './textures.js';
 import { mulberry32, clamp, lerp } from './util.js';
 

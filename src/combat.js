@@ -1,5 +1,5 @@
 // Targeting and projectiles: web shots, thug bullets, pumpkin bombs, razor bats.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { tex } from './textures.js';
 
 const GRAV = 20;

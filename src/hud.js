@@ -1,6 +1,6 @@
 // HUD: health/focus, minimap, objectives, boss bar, combo counter,
 // spider-sense, waypoint, prompts, subtitles and story cards.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { formatTime } from './util.js';
 
 const $ = (id) => document.getElementById(id);

@@ -1,5 +1,5 @@
 // Spider-Man: Block City - bootstrap, game loop, menus.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { World } from './world.js';
 import { Input } from './input.js';
 import { AudioSys } from './audio.js';

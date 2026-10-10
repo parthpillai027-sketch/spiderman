@@ -1,5 +1,5 @@
 // Blocky character rigs (Minecraft proportions) and a pose animator.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { skinMaterials, ATLAS } from './skins.js';
 
 export const PX = 1.8 / 32; // one "skin pixel" in world units -> 1.8 block tall characters

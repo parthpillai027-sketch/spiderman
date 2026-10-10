@@ -1,6 +1,6 @@
 // Spider-Man: traversal (run, wall-crawl, web-swing, point-launch, web-zip)
 // and free-flow combat (lunge strikes, combos, webs, dodges, focus).
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { buildCharacter, animateRig, setSkin } from './models.js';
 import { clamp, approachXZ, dampAngle, damp } from './util.js';
 import { WATER_Y } from './world.js';

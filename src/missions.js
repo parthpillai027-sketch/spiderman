@@ -1,6 +1,6 @@
 // Story missions (inspired by the 2002 film's story beats, all dialogue
 // original), free-roam crimes and collectible backpacks.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 import { Actor } from './npcs.js';
 import { WATER_Y, SIDEWALK_H, X0, Z0, CELL } from './world.js';
 import { tex } from './textures.js';

@@ -1,5 +1,5 @@
 // Voxel particles, web lines and objective markers.
-import * as THREE from 'three';
+import * as THREE from '../vendor/three.module.min.js';
 
 export class Particles {
   constructor(scene, max = 1500) {
