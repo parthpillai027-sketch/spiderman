@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spider-Man: Block City</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="speedlines"></div>
+  <div id="damage"></div>
+
+  <div id="hud" class="hidden">
+    <div id="hud-bl">
+      <div class="bars">
+        <div class="bar" id="health-bar"><div id="health-ghost"></div><div id="health-fill"></div></div>
+        <div class="bar" id="focus-bar"><div id="focus-fill"></div><i></i><i></i></div>
+      </div>
+      <canvas id="minimap" width="200" height="200"></canvas>
+    </div>
+    <div id="objective" class="hidden">
+      <div id="obj-title"></div>
+      <div id="obj-text"></div>
+      <div id="obj-extra"></div>
+    </div>
+    <div id="collect"></div>
+    <div id="boss"><div id="boss-name"></div><div id="boss-bar"><div id="boss-fill"></div></div></div>
+    <div id="combo"><span id="combo-num">0</span><small>HITS</small></div>
+    <div id="sense"><span></span><span></span><span></span></div>
+    <div id="crosshair"></div>
+    <div id="perch"></div>
+    <div id="waypoint"><div class="diamond"></div><span id="wp-dist"></span></div>
+    <div id="prompt"><span id="prompt-text"></span><div class="track"><div id="prompt-bar"></div></div></div>
+    <div id="subtitle"><b id="sub-name"></b> <span id="sub-text"></span></div>
+    <div id="toast"><h2 id="toast-title"></h2><p id="toast-sub"></p></div>
+    <div id="notify"></div>
+    <div id="flash"></div>
+    <div id="hint">M map &middot; ESC pause</div>
+  </div>
+
+  <div id="bigmap" class="hidden"><div class="card"><h2>MANHATTAN</h2><canvas id="bigmap-canvas"></canvas><p>Press M to close</p></div></div>
+
+  <div id="story" class="hidden">
+    <div class="card">
+      <h2 id="story-title"></h2>
+      <div id="story-body"></div>
+      <div class="continue">Click / Enter / &#10005; to continue</div>
+    </div>
+  </div>
+
+  <div id="title" class="hidden">
+    <div class="logo">
+      <div class="spider"></div>
+      <h1>SPIDER-MAN</h1>
+      <h2>BLOCK CITY</h2>
+      <p class="tag">Chapter One: The Goblin's Shadow</p>
+    </div>
+    <nav>
+      <button id="btn-continue" class="hidden">Continue</button>
+      <button id="btn-new">New Game</button>
+      <button id="btn-controls">Controls</button>
+      <button id="btn-credits">Credits</button>
+    </nav>
+    <p class="foot">Fan-made prototype &middot; Keyboard + mouse or gamepad</p>
+  </div>
+
+  <div id="pause" class="hidden">
+    <div class="card wide">
+      <h2>PAUSED</h2>
+      <div id="stats"></div>
+      <h3>Suits</h3>
+      <div id="suits" class="chips"></div>
+      <h3>Chapter select</h3>
+      <div id="chapters" class="chips"></div>
+      <h3>Settings</h3>
+      <label class="row">Mouse sensitivity <input id="sens" type="range" min="0" max="100" value="30" /></label>
+      <div class="row">
+        <button id="btn-resume">Resume</button>
+        <button id="btn-music">Music: On</button>
+        <button id="btn-pause-controls">Controls</button>
+        <button id="btn-quit">Quit to title</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="controls" class="hidden">
+    <div class="card wide">
+      <h2>CONTROLS</h2>
+      <table>
+        <tr><th>Action</th><th>Keyboard + mouse</th><th>Gamepad (PS)</th></tr>
+        <tr><td>Move / camera</td><td>WASD / Mouse</td><td>Left stick / Right stick</td></tr>
+        <tr><td>Web-swing (air) &middot; Sprint &amp; wall-run</td><td>Hold SHIFT</td><td>Hold R2</td></tr>
+        <tr><td>Jump &middot; Web-zip boost (air) &middot; Swing launch</td><td>SPACE</td><td>&#10005;</td></tr>
+        <tr><td>Point-launch to ledge (white diamond)</td><td>Q</td><td>R1</td></tr>
+        <tr><td>Attack (zips to far enemies)</td><td>Left click / J</td><td>&#9633; Square</td></tr>
+        <tr><td>Web shooter</td><td>Right click / K</td><td>&#9651; Triangle</td></tr>
+        <tr><td>Dodge (time it with spider-sense)</td><td>C / L</td><td>&#9675; Circle</td></tr>
+        <tr><td>Heal (uses focus)</td><td>F</td><td>D-pad down</td></tr>
+        <tr><td>Finisher (half focus bar)</td><td>V</td><td>L1</td></tr>
+        <tr><td>Interact / rescue</td><td>E</td><td>L2</td></tr>
+        <tr><td>Map &middot; Pause</td><td>M &middot; ESC</td><td>Create &middot; Options</td></tr>
+      </table>
+      <p>Wall-crawl: run or swing into any wall. Reach the top to vault onto the roof.</p>
+      <button data-close="controls">Close</button>
+    </div>
+  </div>
+
+  <div id="credits" class="hidden">
+    <div class="card wide">
+      <h2>CREDITS</h2>
+      <p>A voxel-styled fan prototype inspired by the 2002 Spider-Man film and the PS5 Spider-Man games.</p>
+      <p>All code, pixel art, music and sound effects are original and generated procedurally in the browser. Rendering by three.js (MIT).</p>
+      <p>Spider-Man, the Green Goblin and related characters are trademarks of Marvel. This prototype is not affiliated with or endorsed by Marvel, Sony or Mojang, and needs a licence before any public or commercial release.</p>
+      <button data-close="credits">Close</button>
+    </div>
+  </div>
+
+  <div id="loading"><div class="card"><h2>BUILDING NEW YORK...</h2><p>Stacking a few thousand blocks</p></div></div>
+  <div id="fps" class="hidden"></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
