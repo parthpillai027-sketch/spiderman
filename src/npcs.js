@@ -2,7 +2,8 @@
 import * as THREE from '../vendor/three.module.min.js';
 import { buildCharacter, animateRig, PX } from './models.js';
 import { N, CELL, X0, Z0, BW, SIDEWALK_H } from './world.js';
-import { damp, mulberry32 } from './util.js';
+import { damp, mulberry32, pick } from './util.js';
+import { HUMAN_SPECS } from './skins.js';
 
 const CAR_COLORS = [0xd8c23a, 0xd8c23a, 0xb83227, 0x2e5fa8, 0xe8e8e8, 0x2b2b2b, 0x3f7d4a, 0x8e44ad, 0xd35400];
 
@@ -95,6 +96,10 @@ export class Traffic {
 const SKIN = [0xf1c8a5, 0xd8a47f, 0xa86f4b, 0x6b4226, 0xe2b58f];
 const SHIRT = [0x2e8b57, 0xc0392b, 0x2980b9, 0xf1c40f, 0x8e44ad, 0xecf0f1, 0x34495e, 0xe67e22, 0x16a085];
 const PANTS = [0x2c3e50, 0x34405e, 0x222222, 0x5d4037, 0x7f8c8d];
+const HAIR = [0x2b1d10, 0x111111, 0x5a3a22, 0xc9a050, 0x7a2a1a, 0x8a8a8a];
+const HIT_LINES = ['Hey! Watch where you\'re swinging!', 'You wanna go, web-head?!', 'Some hero you are!', 'Ow! That\'s it, pal!'];
+const BUMP_LINES = ['Hey! Watch it, bug-boy!', 'Do you mind?!', 'You knocked my coffee over, you creep!'];
+const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 
 export class Pedestrians {
   constructor(game, count = 110) {
@@ -134,11 +139,14 @@ export class Pedestrians {
       const ped = { x0, z0, side, t: r() * side * 4, speed: 1.2 + r() * 0.9, dir: r() < 0.5 ? 1 : -1, phase: r() * 6, panic: 0 };
       this.peds.push(ped);
       const shirt = SHIRT[Math.floor(r() * SHIRT.length)];
-      this.meshes.head.setColorAt(k, col.setHex(SKIN[Math.floor(r() * SKIN.length)]));
+      const skin = SKIN[Math.floor(r() * SKIN.length)];
+      this.meshes.head.setColorAt(k, col.setHex(skin));
       this.meshes.torso.setColorAt(k, col.setHex(shirt));
       this.meshes.armL.setColorAt(k, col.setHex(shirt));
       this.meshes.armR.setColorAt(k, col.setHex(shirt));
       const pants = PANTS[Math.floor(r() * PANTS.length)];
+      // remembered so a provoked pedestrian can become a full character in the same clothes
+      Object.assign(ped, { skin, shirt, pants, hair: HAIR[k % HAIR.length] });
       this.meshes.legL.setColorAt(k, col.setHex(pants));
       this.meshes.legR.setColorAt(k, col.setHex(pants));
     }
@@ -151,11 +159,77 @@ export class Pedestrians {
     this.alarmTime = 8;
   }
 
+  // Nearest walking pedestrian within `radius` of pos (optionally in front of `dir`).
+  nearest(pos, radius, dir = null) {
+    let best = -1, bd = radius;
+    this.peds.forEach((p, k) => {
+      if (p.hidden || p.x === undefined || Math.abs(pos.y - SIDEWALK_H) > 2.5) return;
+      const dx = p.x - pos.x, dz = p.z - pos.z;
+      const d = Math.hypot(dx, dz);
+      if (d >= bd) return;
+      if (dir && d > 0.5 && (dx * dir.x + dz * dir.z) / d < 0.2) return;
+      bd = d;
+      best = k;
+    });
+    return best;
+  }
+
+  // A pedestrian who was hit or barged into steps out of the crowd system and
+  // becomes a full character who fights back.
+  provoke(k, reason = 'hit') {
+    const p = this.peds[k];
+    if (!p || p.hidden) return null;
+    const key = `ped${k}`;
+    if (!HUMAN_SPECS[key]) HUMAN_SPECS[key] = { skin: p.skin, hair: p.hair, shirt: p.shirt, pants: p.pants };
+    p.hidden = true;
+    for (const m of Object.values(this.meshes)) {
+      m.setMatrixAt(k, ZERO);
+      m.instanceMatrix.needsUpdate = true;
+    }
+    const g = this.game;
+    const e = g.enemies.spawn('civilian', new THREE.Vector3(p.x, SIDEWALK_H + 0.02, p.z), 'civ', { skin: key });
+    e.pedIndex = k;
+    e.aggro = true;
+    e.state = 'chase';
+    e.cool = 0.6;
+    e.facing = Math.atan2(g.player.pos.x - p.x, g.player.pos.z - p.z);
+    g.hud.say('Pedestrian', pick(reason === 'bump' ? BUMP_LINES : HIT_LINES), 2.5);
+    this.panicAt(new THREE.Vector3(p.x, 0, p.z));
+    return e;
+  }
+
+  // Back to walking their route (after calming down or getting back up).
+  reattach(k) {
+    const p = this.peds[k];
+    if (!p) return;
+    p.hidden = false;
+    p.init = false;
+    p.bumpCd = 4;
+  }
+
+  // Barging into people at speed, or landing hard next to them, provokes them.
+  bumpAround(pos, radius) {
+    const k = this.nearest(pos, radius);
+    if (k < 0 || this.peds[k].bumpCd > 0) return null;
+    const e = this.provoke(k, 'bump');
+    if (e) {
+      e.stagger = 0.6;
+      const away = e.pos.clone().sub(pos).setY(0);
+      if (away.lengthSq() > 1e-4) e.vel.addScaledVector(away.normalize(), 4);
+    }
+    return e;
+  }
+
   update(dt) {
     this.alarmTime -= dt;
     const d = this.dummy;
     const cam = this.game.camera.position;
+    const pl = this.game.player;
+    const plSpeed = Math.hypot(pl.vel.x, pl.vel.z);
+    if (plSpeed > 11 && !pl.dead && (pl.state === 'ground' || pl.state === 'air' || pl.state === 'lunge')) this.bumpAround(pl.pos, 1.1);
     this.peds.forEach((p, k) => {
+      if (p.bumpCd > 0) p.bumpCd -= dt;
+      if (p.hidden) return;
       let speed = p.speed;
       if (this.alarmTime > 0 && this.alarm) {
         const dx = p.x - this.alarm.x, dz = p.z - this.alarm.z;

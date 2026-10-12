@@ -35,6 +35,7 @@ Add `?debug` to the URL to get an FPS and draw-call counter, mission skip (keys 
 | Spider-sense | Enemy wind-ups trigger a directional HUD warning. A dodge during the warning is a **perfect dodge** (slow-mo + focus). |
 | Focus | Hits fill the focus bar. Spend it to heal (1/3 bar) or on a finisher (1/2 bar). |
 | Enemy design | Brawlers, gunners, brutes and the Carjacker. Only two can attack at once (token system), as in the PS5 game. |
+| Living city | Pedestrians fight back if you punch them or barge into them at speed: they shout, swing at you (with a spider-sense warning) and their hits cost health. Knock them down and they get back up, or leave and they calm down, then rejoin the crowd. |
 | Boss fight | The Green Goblin flies a glider and uses pumpkin bombs, razor bats and dash attacks. He has three phases, and you jam his glider with webs or perfect-dodge his dash to ground him. |
 | Open world | A 12×12-block Manhattan with a park, festival plaza, Oscorp Tower, Daily Bugle, a warehouse district, the river, a suspension bridge and Queens. Traffic and pedestrians are instanced. |
 | Side activities | Random police-scanner crimes (from Chapter 3 on) and 12 hidden backpacks, each with a memory of Peter's. |

@@ -9,17 +9,19 @@ export const ENEMY_TYPES = {
   gunner: { hp: 30, speed: 5, dmg: 7, range: 24, windup: 0.9, cooldown: [1.8, 3.0], ranged: true, skins: ['thugB', 'thugA'] },
   brute: { hp: 110, speed: 4.6, dmg: 18, range: 2.9, windup: 0.85, cooldown: [2, 3], scale: 1.35, skins: ['brute'] },
   burglar: { hp: 75, speed: 6.8, dmg: 12, range: 2.3, windup: 0.5, cooldown: [1.1, 2], skins: ['burglar'], name: 'The Carjacker' },
+  // an ordinary New Yorker who got hit (or barged into) and is fighting back
+  civilian: { hp: 28, speed: 7, dmg: 6, range: 2.2, windup: 0.6, cooldown: [1.1, 1.9], skins: ['civ0'] },
 };
 
 export class Enemy {
-  constructor(mgr, type, pos, group) {
+  constructor(mgr, type, pos, group, opts = {}) {
     this.mgr = mgr;
     this.game = mgr.game;
     this.type = type;
     this.def = ENEMY_TYPES[type];
     this.group = group;
     this.scale = this.def.scale || 1;
-    this.rig = buildCharacter(pick(this.def.skins), { scale: this.scale });
+    this.rig = buildCharacter(opts.skin || pick(this.def.skins), { scale: this.scale });
     this.pos = this.rig.root.position;
     this.pos.copy(pos);
     this.vel = new THREE.Vector3();
@@ -236,12 +238,14 @@ export class Enemy {
     this.vel.x += dir.x * 6;
     this.vel.z += dir.z * 6;
     this.vel.y = Math.max(this.vel.y, 5);
-    this.rig.web.visible = true;
+    this.rig.web.visible = this.type !== 'civilian'; // crooks get webbed up; civilians just get back up
     this.game.combat.unregister(this);
     this.mgr.onKO(this);
+    if (this.type === 'civilian') this.game.hud.notify('Easy, Spider-Man. That was just a pedestrian.');
   }
 
   dispose() {
+    if (this.pedIndex !== undefined && this.game.peds) this.game.peds.reattach(this.pedIndex);
     this.game.scene.remove(this.rig.root);
     this.game.combat.unregister(this);
     this.mgr.releaseToken(this);
@@ -257,8 +261,8 @@ export class EnemyManager {
     this.koCount = 0;
   }
 
-  spawn(type, pos, group = 'default') {
-    const e = new Enemy(this, type, pos, group);
+  spawn(type, pos, group = 'default', opts = {}) {
+    const e = new Enemy(this, type, pos, group, opts);
     this.list.push(e);
     return e;
   }
@@ -312,9 +316,16 @@ export class EnemyManager {
 
   update(dt) {
     const keep = [];
+    const p = this.game.player.pos;
     for (const e of this.list) {
       e.update(dt);
-      if (!e.alive && e.koTime > 25) e.dispose();
+      let done = !e.alive && e.koTime > 25;
+      if (e.type === 'civilian') {
+        // a knocked-down pedestrian gets back up; an angry one calms down once Spidey leaves
+        e.calmT = e.alive && e.pos.distanceTo(p) > 26 ? (e.calmT || 0) + dt : 0;
+        done = (!e.alive && e.koTime > 7) || e.calmT > 3;
+      }
+      if (done) e.dispose();
       else keep.push(e);
     }
     this.list = keep;
