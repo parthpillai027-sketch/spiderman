@@ -230,6 +230,7 @@ export class Player {
   land(vy) {
     this.state = 'ground';
     if (vy < -28) {
+      this.game.peds.bumpAround(this.pos, 2.5); // a hard landing next to someone startles them into a fight
       this.game.cameraRig.shake(Math.min(0.5, -vy / 120));
       this.game.particles.burst(this.pos.clone().add(new THREE.Vector3(0, 0.2, 0)), 10, { colors: [0xbbbbbb, 0x999999], speed: 5, size: 0.35, up: 1, grav: -4 });
       this.game.audio.play('land');
@@ -453,6 +454,13 @@ export class Player {
     const tgt = g.combat.findTarget(this.center, dir, 20);
     this.t.attackCd = 0.24;
     if (!tgt) {
+      // no enemy around: a punch can still land on a pedestrian right in front of you
+      const k = g.peds.nearest(this.pos, 2.4, this.moveMag > 0.1 ? this.moveDir : g.cameraRig.flatForward);
+      const ped = k >= 0 ? g.peds.provoke(k, 'hit') : null;
+      if (ped) {
+        this.strike(ped);
+        return;
+      }
       this.playAction(['punchR', 'punchL', 'kick'][Math.floor(Math.random() * 3)], 0.22);
       g.audio.play('whoosh');
       return;
